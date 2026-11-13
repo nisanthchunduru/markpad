@@ -274,18 +274,40 @@ function handleCheckboxToggle(event: Event): void {
   sendMarkdownToHost();
 }
 
-function restoreCursorInBlock(cid: string): void {
+function restoreCursorInBlock(cid: string, atStart = false): void {
   const element = write.querySelector(`[data-cid="${cid}"]`) as HTMLElement | null;
   if (!element) return;
-  const textNode = findFirstTextNode(element);
-  if (textNode) {
-    const selection = window.getSelection()!;
-    const range = document.createRange();
-    range.setStart(textNode, Math.min(1, textNode.textContent?.length ?? 0));
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+  const selection = window.getSelection()!;
+  const range = document.createRange();
+  if (atStart) {
+    const target = findContentTextNode(element, true);
+    if (target) { range.setStart(target, 0); range.collapse(true); }
+    else { range.selectNodeContents(element); range.collapse(true); }
+  } else {
+    const target = findContentTextNode(element, false);
+    if (target) { range.setStart(target, target.textContent?.length ?? 0); range.collapse(true); }
+    else { range.selectNodeContents(element); range.collapse(false); }
   }
+  selection.removeAllRanges();
+  selection.addRange(range);
+  element.focus();
+}
+
+function findContentTextNode(element: HTMLElement, first: boolean): Text | null {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (node.parentElement?.closest('.md-meta, .md-list-marker, .md-fence-lang')) return NodeFilter.FILTER_REJECT;
+      if (!node.textContent || node.textContent === '\u200B') return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let result: Text | null = null;
+  let node: Text | null;
+  while ((node = walker.nextNode() as Text | null)) {
+    if (first) return node;
+    result = node;
+  }
+  return result;
 }
 
 function findFirstTextNode(node: Node): Text | null {
@@ -337,8 +359,11 @@ function readBlockFromDom(cid: string): string | null {
     case 'frontmatter':
     case 'table':
     case 'rule':
-    case 'blank':
       return block.raw;
+    case 'blank': {
+      const text = (element.textContent || '').replace(/\u200B/g, '');
+      return text;
+    }
     default:
       return element.textContent || '';
   }
@@ -387,6 +412,7 @@ function extractInlineContent(element: HTMLElement): string {
 }
 
 function syncFocusedBlockToDom(): void {
+  if (!focusedBlockId) detectFocusedBlockFromSelection();
   if (!focusedBlockId) return;
   const updatedRaw = readBlockFromDom(focusedBlockId);
   if (updatedRaw === null) return;
@@ -443,11 +469,7 @@ function performUndo(): void {
   pushUndo();
   if (undoStack.length > 1) {
     redoStack.push(undoStack.pop()!);
-    const text = undoStack[undoStack.length - 1];
-    blocks = parseMarkdownToBlocks(text);
-    focusedBlockId = null;
-    renderAllBlocks();
-    sendMarkdownToHost();
+    applySnapshot(undoStack[undoStack.length - 1]);
   }
 }
 
@@ -455,11 +477,17 @@ function performRedo(): void {
   if (redoStack.length > 0) {
     const text = redoStack.pop()!;
     undoStack.push(text);
-    blocks = parseMarkdownToBlocks(text);
-    focusedBlockId = null;
-    renderAllBlocks();
-    sendMarkdownToHost();
+    applySnapshot(text);
   }
+}
+
+function applySnapshot(text: string): void {
+  const savedScrollTop = write.scrollTop;
+  blocks = parseMarkdownToBlocks(text);
+  focusedBlockId = null;
+  renderAllBlocks();
+  write.scrollTop = savedScrollTop;
+  sendMarkdownToHost();
 }
 
 write.addEventListener('input', () => {
@@ -476,7 +504,17 @@ function setZoom(level: number): void {
 }
 
 function focusedBlock(): BlockNode | undefined {
+  if (!focusedBlockId) detectFocusedBlockFromSelection();
   return focusedBlockId ? blocks.find(b => b.id === focusedBlockId) : undefined;
+}
+
+function detectFocusedBlockFromSelection(): void {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return;
+  const node = selection.focusNode;
+  if (!node) return;
+  const blockEl = (node.nodeType === Node.ELEMENT_NODE ? node as HTMLElement : node.parentElement)?.closest('[data-cid]') as HTMLElement | null;
+  if (blockEl?.dataset.cid) focusedBlockId = blockEl.dataset.cid;
 }
 
 function convertBlock(block: BlockNode, toType: BlockNode['type'], prefix: string): void {
@@ -664,14 +702,56 @@ function isBlockEmpty(block: BlockNode): boolean {
 
 function handleEnterKey(): void {
   syncFocusedBlockToDom();
-  const currentBlock = focusedBlockId ? blocks.find(b => b.id === focusedBlockId) : null;
+  const currentBlock = focusedBlock();
   if (!currentBlock) return;
   const currentIndex = blocks.indexOf(currentBlock);
-  const newBlock: BlockNode = { id: generateId(), type: 'paragraph', raw: '' };
+
+  let beforeRaw = currentBlock.raw;
+  let afterRaw = '';
+
+  const element = write.querySelector(`[data-cid="${currentBlock.id}"]`) as HTMLElement | null;
+  const selection = window.getSelection();
+  if (element && selection && selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    const beforeRange = document.createRange();
+    beforeRange.setStart(element, 0);
+    beforeRange.setEnd(range.startContainer, range.startOffset);
+    const visibleBefore = beforeRange.cloneContents().textContent || '';
+
+    const fullVisible = element.textContent || '';
+    const cursorOffset = visibleBefore.length;
+
+    const contentRaw = currentBlock.type === 'heading'
+      ? currentBlock.raw.replace(/^#{1,6}\s/, '')
+      : currentBlock.type === 'blockquote'
+      ? currentBlock.raw.replace(/^>\s?/gm, '')
+      : currentBlock.type === 'bullet'
+      ? currentBlock.raw.replace(/^\s*[-+*]\s+/, '')
+      : currentBlock.type === 'ordered'
+      ? currentBlock.raw.replace(/^\s*\d+[.)]\s+/, '')
+      : currentBlock.type === 'task'
+      ? currentBlock.raw.replace(/^\s*[-+*]\s+\[[ xX]\]\s*/, '')
+      : currentBlock.raw;
+
+    const prefix = currentBlock.raw.slice(0, currentBlock.raw.length - contentRaw.length);
+    const visiblePrefix = fullVisible.length - contentRaw.length;
+    const contentOffset = Math.max(0, Math.min(cursorOffset - Math.max(0, visiblePrefix), contentRaw.length));
+    const contentBefore = contentRaw.slice(0, contentOffset);
+    const contentAfter = contentRaw.slice(contentOffset);
+    beforeRaw = prefix + contentBefore;
+    afterRaw = contentAfter;
+  }
+
+  currentBlock.raw = beforeRaw;
+  const newType = detectBlockType(beforeRaw);
+  currentBlock.type = newType.type;
+  currentBlock.level = newType.level;
+
+  const newBlock: BlockNode = { id: generateId(), type: 'paragraph', raw: afterRaw };
   blocks.splice(currentIndex + 1, 0, newBlock);
   focusedBlockId = newBlock.id;
   renderAllBlocks();
-  restoreCursorInBlock(newBlock.id);
+  restoreCursorInBlock(newBlock.id, true);
   sendMarkdownToHost();
 }
 
@@ -796,15 +876,21 @@ window.addEventListener('message', event => {
   applyTheme(message.theme);
   images = message.images || {};
   
-  const isAck = pendingEdit && message.text === blocksToMarkdown(blocks);
+  const currentText = blocksToMarkdown(blocks);
+  const isAck = pendingEdit && message.text === currentText;
+  const isIdentical = message.text === currentText;
   documentVersion = message.version;
   baseText = message.text;
   pendingEdit = false;
 
-  if (!isAck) {
+  if (!isAck && !isIdentical) {
+    const savedFocusId = focusedBlockId;
+    const savedScrollTop = write.scrollTop;
     blocks = parseMarkdownToBlocks(message.text);
-    focusedBlockId = null;
+    focusedBlockId = savedFocusId && blocks.some(b => b.id === savedFocusId) ? savedFocusId : null;
     renderAllBlocks();
+    write.scrollTop = savedScrollTop;
+    if (focusedBlockId) restoreCursorInBlock(focusedBlockId);
     undoStack = [message.text];
     redoStack = [];
   }
