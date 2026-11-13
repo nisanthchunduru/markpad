@@ -1,0 +1,85 @@
+{
+  "name": "markpad",
+  "displayName": "Tyler: Typora-inspired Markdown Editor",
+  "description": "A Typora-inspired, live-preview Markdown editor inside VS Code.",
+  "version": "0.1.36",
+  "publisher": "nisanthchunduru",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Editors"
+  ],
+  "main": "./build/extension.js",
+  "activationEvents": [
+    "onCustomEditor:tyler.editor"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Tyler",
+      "properties": {
+        "tyler.theme": {
+          "type": "string",
+          "enum": [
+            "github",
+            "gothic",
+            "newsprint",
+            "night",
+            "pixyll",
+            "pixyll-night",
+            "whitey"
+          ],
+          "default": "github",
+          "description": "Writing theme used by Tyler Markdown editors."
+        }
+      }
+    },
+    "customEditors": [
+      {
+        "viewType": "tyler.editor",
+        "displayName": "Tyler",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          },
+          {
+            "filenamePattern": "*.markdown"
+          },
+          {
+            "filenamePattern": "*.mdown"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "tyler.open",
+        "title": "Open in Tyler",
+        "category": "Markdown"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "tyler.open",
+          "when": "resourceExtname == .md || resourceExtname == .markdown",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "tsc --noEmit",
+    "test": "npm run check && npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/vscode": "1.85.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  }
+}

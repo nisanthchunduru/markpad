@@ -1,0 +1,12 @@
+node_modules/**
+src/**
+test/**
+scripts/**
+.vscode/**
+.gitignore
+.vscodeignore
+tsconfig.json
+package-lock.json
+web/editor.ts
+build/diff.cjs
+build/*.vsix
