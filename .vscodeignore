@@ -7,6 +7,6 @@ scripts/**
 .vscodeignore
 tsconfig.json
 package-lock.json
-web/editor.ts
+web/**/*.ts
 build/diff.cjs
 build/*.vsix

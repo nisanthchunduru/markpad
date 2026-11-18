@@ -7,7 +7,8 @@ type IncomingMessage =
   | { type: 'edit'; text: string; version: number }
   | { type: 'openLink'; href: string }
   | { type: 'theme'; theme: string }
-  | { type: 'ready' };
+  | { type: 'ready' }
+  | { type: 'save' };
 
 function imageUris(document: vscode.TextDocument, webview: vscode.Webview): Record<string, string> {
   const result: Record<string, string> = {};
@@ -60,6 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
       });
       const messages = webview.onDidReceiveMessage(async (message: IncomingMessage) => {
         if (message.type === 'ready') { await sendDocument(); return; }
+        if (message.type === 'save') { await document.save(); return; }
         if (message.type === 'theme') {
           if (!isThemeName(message.theme)) return;
           const settings = vscode.workspace.getConfiguration('tyler');

@@ -7,7 +7,8 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 ### Document model
 
 - REQ-001: Tyler shall parse a Markdown document into a sequence of typed block nodes (paragraph, heading, blockquote, bullet, ordered, task, fence, rule, table, blank, frontmatter).
-- REQ-002: Tyler shall serialize block nodes back to Markdown source that, when re-parsed, produces an equivalent block sequence.
+- REQ-002: Tyler shall serialize block nodes and their source separators back to Markdown that, when re-parsed, produces an equivalent visible block sequence.
+- REQ-005: Tyler shall store the blank-line separator between paragraphs as source metadata rather than as an additional editable block.
 - REQ-003: When the user edits a block in the contenteditable surface, Tyler shall read the updated content from the DOM and update the corresponding block node's raw Markdown.
 - REQ-004: When a block's raw Markdown changes to match a different block type (e.g. typing `## ` at the start of a paragraph), Tyler shall re-classify the block and re-render it as the new type.
 
@@ -15,7 +16,7 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 
 - REQ-010: Tyler shall render each block node to semantic HTML inside a single contenteditable `#write` div.
 - REQ-011: Tyler shall render inline Markdown (bold, italic, strikethrough, inline code, links, images) to their corresponding HTML elements (`<strong>`, `<em>`, `<del>`, `<code>`, `<a>`, `<img>`).
-- REQ-012: When a heading block is focused, Tyler shall display the Markdown prefix (e.g. `## `) as a muted `<span>` alongside the rendered heading text.
+- REQ-012: While a heading is rendered, Tyler shall keep structural Markdown prefixes out of its editable text so moving the caret cannot edit or split a metadata span.
 - REQ-013: When a heading block is not focused, Tyler shall hide the Markdown prefix and display only the rendered heading text.
 - REQ-014: Tyler shall render YAML frontmatter as a two-column key-value table.
 - REQ-015: Tyler shall render fenced code blocks as `<pre><code>` with a language label, supporting both top-level and indented fences.
@@ -30,7 +31,14 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 
 ### Block operations
 
-- REQ-030: When the user presses Enter, Tyler shall split the current block and create a new paragraph block after it.
+- REQ-030: When the user presses Enter in a paragraph or heading, Tyler shall split at the current selection, preserve inline formatting on each side, remove selected text, and place the caret in exactly one new visible paragraph without an intervening editable separator row.
+- REQ-048: When the user saves and reopens paragraphs created by Enter, Tyler shall preserve their Markdown separation without introducing extra visible separator rows.
+- REQ-049: When the user presses Enter repeatedly in an empty paragraph, Tyler shall create one intentional empty paragraph per keypress and preserve those paragraphs through save, reload, undo, and redo.
+- REQ-035: When the user presses Enter in a nonempty list item, Tyler shall continue its list type, increment an ordered-list number, and initialize a new task item as unchecked.
+- REQ-036: When the user presses Enter in an empty list item, Tyler shall convert that item into an empty paragraph.
+- REQ-037: When the user types a backtick fence opener and presses Enter, Tyler shall create an editable fenced-code block.
+- REQ-038: While the caret is in a fenced-code block, when the user presses Enter, Tyler shall insert a literal newline in the code.
+- REQ-039: While a frontmatter table is displayed, Tyler shall make it read-only rather than accept changes that it cannot serialize; editing its YAML shall remain available in VS Code's Text Editor.
 - REQ-031: When the user presses Backspace on an empty block, Tyler shall delete the block and move the cursor to the previous block.
 - REQ-032: When the user presses Shift+Enter, Tyler shall insert a line break within the current block.
 - REQ-033: When the user presses Tab on a list item, Tyler shall indent the item by prepending two spaces to its raw Markdown.
@@ -42,7 +50,11 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 
 - REQ-040: Tyler shall register as a VS Code `CustomTextEditorProvider` for `.md`, `.markdown`, and `.mdown` files.
 - REQ-041: Tyler shall keep VS Code's `TextDocument` authoritative: edits in the webview shall be sent as minimal `WorkspaceEdit` replacements to the host.
-- REQ-042: When the host document changes (from another editor, external save, or undo), Tyler shall re-parse the updated Markdown and re-render the blocks.
+- REQ-042: When the host document content changes externally, Tyler shall reconcile the incoming text with the local draft and restore a valid selection and scroll position after rendering.
+- REQ-044: When the host sends identical content, Tyler shall leave the editable DOM, selection, scroll position, and undo history unchanged.
+- REQ-045: When an acknowledgement arrives after additional local typing, Tyler shall retain that typing and send it using the acknowledged document version.
+- REQ-046: When the user presses Cmd/Ctrl+S in Tyler, Tyler shall wait for outstanding local edits to reach the host before requesting a document save.
+- REQ-047: When an empty document is first opened, Tyler shall create an editable blank block before accepting keyboard input.
 - REQ-043: If a host document change conflicts with unsaved webview edits, Tyler shall display a conflict banner with "Use latest file" and "Keep my draft" options.
 
 ### Webview
@@ -68,13 +80,18 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-073: When the user presses Cmd/Ctrl+Shift+K, Tyler shall delete the current block.
 - REQ-074: When the user presses Alt+Shift+ArrowUp, Tyler shall move the current block up.
 - REQ-075: When the user presses Alt+Shift+ArrowDown, Tyler shall move the current block down.
-- REQ-076: When the user presses Cmd/Ctrl+A once, Tyler shall select all content in the current block. When the user presses Cmd/Ctrl+A again with the block already selected, Tyler shall select all content in the document.
+- REQ-076: When the user presses Cmd/Ctrl+A in the editor, Tyler shall select the entire document.
+- REQ-077: When the user replaces the entire selection with text, Tyler shall discard the old document structure and allow undo to restore it.
+- REQ-078: When the user pastes content, Tyler shall insert the clipboard's plain text and include the insertion in undo history.
 
 ## Undo / redo
 
-- REQ-080: Tyler shall maintain an undo stack of up to 300 Markdown snapshots.
-- REQ-081: While the user is typing, Tyler shall debounce undo snapshots at 400ms intervals.
-- REQ-082: When the user performs a block-level action (heading change, formatting, move, delete, duplicate), Tyler shall push an undo snapshot immediately before the mutation.
+- REQ-080: Tyler shall maintain up to 300 edit transactions, including before/after document, DOM, selection, and scroll snapshots.
+- REQ-081: While the user types in the same block with less than 400ms between changes, Tyler shall group consecutive text insertions into one undo transaction.
+- REQ-082: When the user performs a structural or formatting action, Tyler shall record that action as a separate undo transaction.
+- REQ-083: When the user undoes or redoes an edit, Tyler shall restore its document content, selection, and scroll position.
+- REQ-084: When the user edits after undoing, Tyler shall clear the redo branch.
+- REQ-085: While an IME composition is active, Tyler shall defer DOM normalization until composition ends.
 
 ## Zoom
 
@@ -110,3 +127,11 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-130: Tyler shall resolve relative image paths against the document's directory.
 - REQ-131: Tyler shall render resolved images as `<img>` elements with the image's alt text.
 - REQ-132: Tyler shall support HTTPS image URLs without resolution.
+
+## Editing verification
+
+- REQ-140: When the editing regression suite runs, the test harness shall open Tyler in an isolated desktop VS Code profile and exercise mouse clicks and keyboard events.
+- REQ-141: When a regression test saves a document, the test harness shall verify the Markdown on disk and the absence of a dirty tab, rather than relying only on rendered text.
+- REQ-142: When a regression test fails, the test harness shall retain a screenshot, the editor DOM, and a test report in its temporary workspace.
+
+Known coverage limits: the desktop suite currently targets macOS VS Code. IME composition, rich-text paste, nested-list semantics, complex YAML, Markdown extensions, and exhaustive cross-block selections are not fully verified. Frontmatter is read-only in Tyler; use VS Code's Text Editor to edit it.

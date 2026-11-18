@@ -2,7 +2,7 @@
   "name": "markpad",
   "displayName": "Tyler: Typora-inspired Markdown Editor",
   "description": "A Typora-inspired, live-preview Markdown editor inside VS Code.",
-  "version": "0.1.40",
+  "version": "0.1.43",
   "publisher": "nisanthchunduru",
   "license": "MIT",
   "engines": {
@@ -73,10 +73,11 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "tsc --noEmit",
-    "test": "npm run check && npm run build && node --test test/*.test.mjs"
+    "test": "npm run check && npm run build && node --test test/*.test.mjs",
+    "test:editing": "npm run build && node scripts/test-editing.mjs"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "^24.10.1",
     "@types/vscode": "1.85.0",
     "esbuild": "^0.28.2",

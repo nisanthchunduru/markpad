@@ -63,7 +63,8 @@ h4.md-heading { font-size: 1.25em; }
 h5.md-heading, h6.md-heading { font-size: 1em; }
 h6.md-heading { color: var(--muted); }
 
-.md-paragraph { margin: .8em 0; }
+.md-paragraph { margin: .8em 0; white-space: pre-wrap; }
+#write .md-blank, #write .md-paragraph:empty { min-height: 1.4em; }
 .md-blank { margin: 0; min-height: .5em; }
 
 .md-heading .md-meta { color: var(--muted); font-weight: 400; font-size: .6em; margin-right: .3em; vertical-align: baseline; }
@@ -73,7 +74,7 @@ h6.md-heading { color: var(--muted); }
 
 .md-list-item { display: flex; align-items: baseline; padding: .15em 0; margin: .1em 0; }
 .md-list-marker { flex: none; width: 1.6em; text-align: center; color: var(--muted); font-size: .9em; }
-.md-list-content { flex: 1; min-width: 0; }
+.md-list-content { flex: 1; min-width: 0; white-space: pre-wrap; }
 .md-task-checkbox { flex: none; margin: 0 .5em 0 0; accent-color: var(--accent); cursor: pointer; }
 
 .md-fence { background: var(--panel); border-radius: 4px; padding: .8em 1em; margin: .8em 0; overflow-x: auto; position: relative; }
