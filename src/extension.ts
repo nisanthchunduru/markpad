@@ -3,7 +3,10 @@ import * as path from 'node:path';
 import { minimalPatch } from './diff';
 import { isThemeName, type ThemeName } from './themes';
 
+import { findTypora } from './typora';
+
 type IncomingMessage =
+  | { type: 'openInTypora' }
   | { type: 'edit'; text: string; version: number }
   | { type: 'openLink'; href: string }
   | { type: 'theme'; theme: string }
@@ -44,6 +47,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const provider: vscode.CustomTextEditorProvider = {
     resolveCustomTextEditor(document, webviewPanel) {
       const webview = webviewPanel.webview;
+      const launcher = document.uri.scheme === 'file' && !vscode.env.remoteName ? findTypora() : Promise.resolve(undefined);
       const roots = [context.extensionUri, vscode.Uri.joinPath(document.uri, '..'), ...(vscode.workspace.workspaceFolders ?? []).map(folder => folder.uri)];
       webview.options = { enableScripts: true, localResourceRoots: roots };
       const nonce = Buffer.from(vscode.env.sessionId + Math.random()).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
@@ -60,7 +64,22 @@ export function activate(context: vscode.ExtensionContext): void {
         if (event.affectsConfiguration('tyler.theme') || event.affectsConfiguration('vscode-typora.theme')) void webview.postMessage({ type: 'theme', theme: selectedTheme() });
       });
       const messages = webview.onDidReceiveMessage(async (message: IncomingMessage) => {
-        if (message.type === 'ready') { await sendDocument(); return; }
+        if (message.type === 'ready') {
+          await sendDocument();
+          await webview.postMessage({ type: 'typoraAvailability', available: Boolean(await launcher) });
+          return;
+        }
+        if (message.type === 'openInTypora') {
+          const launch = await launcher;
+          if (!launch) return;
+          try {
+            if (document.isDirty && !await document.save()) throw new Error('The document could not be saved.');
+            await launch(document.uri.fsPath);
+          } catch (error) {
+            void vscode.window.showErrorMessage(`Could not open this file in Typora: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          return;
+        }
         if (message.type === 'save') { await document.save(); return; }
         if (message.type === 'theme') {
           if (!isThemeName(message.theme)) return;

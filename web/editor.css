@@ -23,6 +23,7 @@ header { flex: none; height: 40px; display: flex; align-items: center; padding: 
 header #outlineToggle { font-size: 18px; width: 27px; padding: 0; }
 header button { border: 0; background: none; color: var(--muted); cursor: pointer; }
 header button:hover { color: var(--accent); }
+header #openInTypora { border-inline-start: 1px solid var(--border); padding-inline-start: 10px; white-space: nowrap; font: inherit; }
 .spacer { flex: 1; }
 #zoomOut, #zoomIn { min-width: 24px; display: inline-flex; align-items: center; justify-content: center; }
 #zoomLabel { min-width: 36px; text-align: center; font-variant-numeric: tabular-nums; }

@@ -58,6 +58,9 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-047: When an empty document is first opened, Tyler shall create an editable blank block before accepting keyboard input.
 - REQ-043: If a host document change conflicts with unsaved webview edits, Tyler shall display a conflict banner with "Use latest file" and "Keep my draft" options.
 
+- REQ-052: While editing a local file with Typora detected, Tyler shall show an “Open in Typora” button immediately after the Outline toggle with a vertical divider between them; otherwise both the button and divider shall be hidden.
+- REQ-053: When the user selects “Open in Typora”, Tyler shall synchronize pending edits and save the document before launching Typora with the current file path.
+
 ### Webview
 
 - REQ-050: Tyler shall set a Content Security Policy on the webview that restricts scripts to a nonce, allows styles and fonts from the webview's CSP source, and allows images from the CSP source, HTTPS, and data URIs.

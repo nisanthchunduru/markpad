@@ -9,9 +9,10 @@ const sync = new DocumentSync();
 let eol = '\n';
 let zoomLevel = 100;
 let saveRequested = false;
+let typoraRequested = false;
 
 const app = document.getElementById('app')!;
-app.innerHTML = `<div class="shell"><aside id="sidebar" class="closed"><div class="side-header"><span>Outline</span></div><div id="outline"></div></aside><div class="main"><header><button id="outlineToggle" aria-label="Toggle outline" title="Outline">☰</button><span class="spacer"></span><button id="zoomOut" title="Zoom out (Ctrl/Cmd+−)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><line x1="4.5" y1="7" x2="9.5" y2="7"/><line x1="10.8" y1="10.8" x2="14.5" y2="14.5"/></svg></button><span id="zoomLabel">100%</span><button id="zoomIn" title="Zoom in (Ctrl/Cmd++)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><line x1="4.5" y1="7" x2="9.5" y2="7"/><line x1="7" y1="4.5" x2="7" y2="9.5"/><line x1="10.8" y1="10.8" x2="14.5" y2="14.5"/></svg></button><select id="themePicker" aria-label="Writing theme" title="Writing theme"></select><div class="header-actions"><button data-action="heading" title="Heading">H</button><button data-action="bold" title="Bold (Ctrl/Cmd+B)"><b>B</b></button><button data-action="italic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button><button data-action="code" title="Inline code">⟨⟩</button><button data-action="link" title="Insert link">↗</button><button data-action="list" title="Bullet list">≡</button><button data-action="quote" title="Blockquote">❞</button></div></header><div id="conflict" hidden>Changes from another editor overlap your unsaved changes. <button id="useDisk">Use latest file</button> <button id="keepMine">Keep my draft</button></div><div id="write" contenteditable="true" spellcheck="true"></div></div></div>`;
+app.innerHTML = `<div class="shell"><aside id="sidebar" class="closed"><div class="side-header"><span>Outline</span></div><div id="outline"></div></aside><div class="main"><header><button id="outlineToggle" aria-label="Toggle outline" title="Outline">☰</button><button id="openInTypora" type="button" hidden>Open in Typora</button><span class="spacer"></span><button id="zoomOut" title="Zoom out (Ctrl/Cmd+−)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><line x1="4.5" y1="7" x2="9.5" y2="7"/><line x1="10.8" y1="10.8" x2="14.5" y2="14.5"/></svg></button><span id="zoomLabel">100%</span><button id="zoomIn" title="Zoom in (Ctrl/Cmd++)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><line x1="4.5" y1="7" x2="9.5" y2="7"/><line x1="7" y1="4.5" x2="7" y2="9.5"/><line x1="10.8" y1="10.8" x2="14.5" y2="14.5"/></svg></button><select id="themePicker" aria-label="Writing theme" title="Writing theme"></select><div class="header-actions"><button data-action="heading" title="Heading">H</button><button data-action="bold" title="Bold (Ctrl/Cmd+B)"><b>B</b></button><button data-action="italic" title="Italic (Ctrl/Cmd+I)"><i>I</i></button><button data-action="code" title="Inline code">⟨⟩</button><button data-action="link" title="Insert link">↗</button><button data-action="list" title="Bullet list">≡</button><button data-action="quote" title="Blockquote">❞</button></div></header><div id="conflict" hidden>Changes from another editor overlap your unsaved changes. <button id="useDisk">Use latest file</button> <button id="keepMine">Keep my draft</button></div><div id="write" contenteditable="true" spellcheck="true"></div></div></div>`;
 
 
 const write = document.getElementById('write')!;
@@ -32,7 +33,12 @@ themePicker.addEventListener('change', () => { applyTheme(themePicker.value); vs
 function sendChanges(): void {
   const edit = sync.outgoing(editor.text);
   if (edit) vscode.postMessage({ ...edit, text: edit.text.replace(/\n/g, eol) });
-  if (saveRequested && editor.text === sync.base && !sync.conflict) {
+  if (!sync.isSynchronized(editor.text)) return;
+  if (typoraRequested) {
+    typoraRequested = false;
+    vscode.postMessage({ type: 'openInTypora' });
+  }
+  if (saveRequested) {
     saveRequested = false;
     vscode.postMessage({ type: 'save' });
   }
@@ -77,6 +83,8 @@ function setZoom(value: number): void {
   document.getElementById('zoomLabel')!.textContent = zoomLevel + '%';
 }
 document.getElementById('outlineToggle')!.addEventListener('click', toggleOutline);
+const openInTypora = document.getElementById('openInTypora') as HTMLButtonElement;
+openInTypora.addEventListener('click', () => { typoraRequested = true; sendChanges(); });
 document.getElementById('zoomIn')!.addEventListener('click', () => setZoom(zoomLevel + 10));
 document.getElementById('zoomOut')!.addEventListener('click', () => setZoom(zoomLevel - 10));
 write.addEventListener('keydown', event => {
@@ -104,6 +112,7 @@ for (const [id, useLatest] of [['useDisk', true], ['keepMine', false]] as const)
 }
 window.addEventListener('message', event => {
   const message = event.data;
+  if (message.type === 'typoraAvailability') { openInTypora.hidden = message.available !== true; return; }
   if (message.type === 'theme') { applyTheme(message.theme); return; }
   if (message.type !== 'document' || typeof message.text !== 'string' || message.version < sync.version) return;
   const initial = sync.version < 0;

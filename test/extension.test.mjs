@@ -38,8 +38,14 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
     },
     commands: { registerCommand: () => ({ dispose() {} }) }
   };
+  const launches = [];
+  const processes = { execFile(command, args, ...rest) {
+    if (command.endsWith('/open')) launches.push(args);
+    rest.at(-1)(null, { stdout: '/Applications/Typora.app\n' });
+  } };
   const originalLoad = Module._load;
   Module._load = function (request, parent, isMain) {
+    if (request === 'node:child_process' && process.platform === 'darwin') return processes;
     return request === 'vscode' ? vscode : originalLoad.call(this, request, parent, isMain);
   };
   try {
@@ -52,7 +58,9 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
       onDidReceiveMessage: callback => { receiveMessage = callback; return { dispose() {} }; },
       postMessage: message => { posted.push(message); return Promise.resolve(true); }
     };
-    provider.resolveCustomTextEditor({ uri: uri('/notes/example.md'), getText: () => '', version: 1 }, {
+    let saves = 0;
+    const filePath = '/notes/one & two.md';
+    provider.resolveCustomTextEditor({ uri: { ...uri(filePath), fsPath: filePath }, getText: () => '', version: 1, isDirty: true, save: async () => { saves++; return true; } }, {
       webview,
       onDidDispose: () => ({ dispose() {} })
     });
@@ -63,7 +71,14 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
     assert.match(webview.html, /font-src vscode-webview:/);
     assert.match(webview.html, /web\/themes\.css/);
     await receiveMessage({ type: 'ready' });
-    assert.equal(posted.at(-1).theme, 'pixyll');
+    assert.equal(posted.find(message => message.type === 'document').theme, 'pixyll');
+    assert.equal(posted.at(-1).type, 'typoraAvailability');
+    if (process.platform === 'darwin') {
+      assert.equal(posted.at(-1).available, true);
+      await receiveMessage({ type: 'openInTypora' });
+      assert.equal(saves, 1);
+      assert.deepEqual(launches, [['-a', '/Applications/Typora.app', filePath]]);
+    }
     await receiveMessage({ type: 'theme', theme: 'night' });
     assert.equal(selectedTheme, 'night');
     assert.deepEqual(posted.at(-1), { type: 'theme', theme: 'night' });

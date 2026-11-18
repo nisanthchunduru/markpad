@@ -6,6 +6,10 @@ export class DocumentSync {
   private pending: string | null = null;
   conflict = false;
 
+  isSynchronized(draft: string): boolean {
+    return this.version >= 0 && this.pending === null && !this.conflict && draft === this.base;
+  }
+
   outgoing(draft: string): { type: 'edit'; text: string; version: number } | undefined {
     if (this.version < 0 || this.pending !== null || this.conflict || draft === this.base) return;
     this.pending = draft;
