@@ -286,9 +286,42 @@ export class MarkdownEditor {
     this.render(); restoreSelection(this.root, bookmark); this.commit(before);
   }
 
+  private leaveCodeBlockDown(): boolean {
+    const block = this.selectedBlock();
+    const range = this.activeRange();
+    if (block?.type !== 'fence' || !range?.collapsed) return false;
+    const element = this.root.querySelector<HTMLElement>(`[data-cid="${block.id}"]`)!;
+    const code = contentElement(element);
+    if (!code.contains(range.startContainer)) return false;
+    const remaining = range.cloneRange();
+    remaining.selectNodeContents(code);
+    remaining.setStart(range.endContainer, range.endOffset);
+    if (code.innerHTML.toLowerCase() !== '<br>' && plainText(remaining.cloneContents()).includes('\n')) return false;
+
+    const before = this.snapshot();
+    const index = this.blocks.indexOf(block);
+    const lines = block.raw.split('\n');
+    const needsClosingFence = lines.length < 2 || !/^\s*```\s*$/.test(lines.at(-1)!);
+    if (needsClosingFence) block.raw += '\n```';
+    let target = this.blocks[index + 1];
+    const needsParagraph = !target || !['paragraph', 'blank'].includes(target.type);
+    if (needsParagraph) {
+      target = { ...classifyBlock(''), separatorBefore: '\n\n' };
+      this.blocks.splice(index + 1, 0, target);
+      this.render();
+    }
+    restoreSelection(this.root, caret(target.id));
+    this.root.querySelector(`[data-cid="${target.id}"]`)?.scrollIntoView({ block: 'nearest' });
+    if (needsParagraph || needsClosingFence) this.commit(before);
+    return true;
+  }
+
   private onKeyDown(event: KeyboardEvent): void {
     if (event.isComposing || this.composition || event.keyCode === 229) return;
     const mod = event.metaKey || event.ctrlKey; const key = event.key.toLowerCase();
+    if (key === 'arrowdown' && !mod && !event.altKey && !event.shiftKey && this.leaveCodeBlockDown()) {
+      event.preventDefault(); event.stopPropagation(); return;
+    }
     let action: (() => void) | undefined;
     if (mod && key === 'z') action = () => event.shiftKey ? this.redo() : this.undo();
     else if (mod && key === 'y') action = () => this.redo();

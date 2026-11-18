@@ -7,6 +7,7 @@ import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:net';
 import { chromium, expect } from '@playwright/test';
+import { verifyCodeNavigation } from './code-navigation-checks.mjs';
 
 const execute = promisify(execFile);
 const root = resolve(import.meta.dirname, '..');
@@ -219,6 +220,8 @@ try {
     await save('```js\nconst typed = true;\n```');
   });
 
+
+  await verifyCodeNavigation({ frame, page, mod, fixture, save, step });
 
   await step('Shift+Enter persists a line break rather than deleting it', async () => {
     await fixture('Before break\n', 'Before break');

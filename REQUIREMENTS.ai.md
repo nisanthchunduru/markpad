@@ -38,6 +38,7 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-036: When the user presses Enter in an empty list item, Tyler shall convert that item into an empty paragraph.
 - REQ-037: When the user types a backtick fence opener and presses Enter, Tyler shall create an editable fenced-code block.
 - REQ-038: While the caret is in a fenced-code block, when the user presses Enter, Tyler shall insert a literal newline in the code.
+- REQ-079: While the caret is on the last line of a fenced-code block (including an empty block), when the user presses unmodified Down Arrow without a selection, Tyler shall move the caret to the start of the following paragraph, creating an undoable paragraph if needed. Earlier lines and modified arrows retain their normal navigation and selection behavior.
 - REQ-039: While a frontmatter table is displayed, Tyler shall make it read-only rather than accept changes that it cannot serialize; editing its YAML shall remain available in VS Code's Text Editor.
 - REQ-031: When the user presses Backspace on an empty block, Tyler shall delete the block and move the cursor to the previous block.
 - REQ-032: When the user presses Shift+Enter, Tyler shall insert a line break within the current block.
