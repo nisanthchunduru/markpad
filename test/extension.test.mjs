@@ -6,7 +6,7 @@ import fs from 'node:fs';
 
 function uri(filePath) { return { scheme: 'file', path: filePath }; }
 
-test('Tyler loads bundled assets and carries over the old theme selection', async () => {
+test('Markpad loads bundled assets and carries over the old theme selection', async () => {
   let provider;
   let viewType;
   let receiveMessage;
@@ -19,7 +19,7 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
     update: async (_key, theme, target) => {
       assert.equal(target, 'global');
       selectedTheme = theme;
-      onConfigurationChange({ affectsConfiguration: name => name === 'tyler.theme' });
+      onConfigurationChange({ affectsConfiguration: name => name === 'markpad.theme' });
     }
   };
   const legacySettings = { get: () => 'pixyll', inspect: () => ({ workspaceValue: undefined }) };
@@ -29,7 +29,7 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
     ConfigurationTarget: { Global: 'global', Workspace: 'workspace' },
     workspace: {
       workspaceFolders: [],
-      getConfiguration: section => section === 'tyler' ? settings : legacySettings,
+      getConfiguration: section => section === 'markpad' ? settings : legacySettings,
       onDidChangeTextDocument: () => ({ dispose() {} }),
       onDidChangeConfiguration: callback => { onConfigurationChange = callback; return { dispose() {} }; }
     },
@@ -50,8 +50,8 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
   };
   try {
     const { activate } = requireExtension();
-    activate({ extensionUri: uri('/extensions/tyler'), subscriptions: [] });
-    assert.equal(viewType, 'tyler.editor');
+    activate({ extensionUri: uri('/extensions/markpad'), subscriptions: [] });
+    assert.equal(viewType, 'markpad.editor');
     const webview = {
       cspSource: 'vscode-webview:',
       asWebviewUri: resource => ({ toString: () => `vscode-webview:${resource.path}` }),
@@ -64,7 +64,7 @@ test('Tyler loads bundled assets and carries over the old theme selection', asyn
       webview,
       onDidDispose: () => ({ dispose() {} })
     });
-    assert.ok(webview.options.localResourceRoots.some(root => root.path === '/extensions/tyler'));
+    assert.ok(webview.options.localResourceRoots.some(root => root.path === '/extensions/markpad'));
     assert.match(webview.html, /build\/web\.js/);
     assert.match(webview.html, /web\/editor\.css/);
     assert.match(webview.html, /web\/fonts\.css/);

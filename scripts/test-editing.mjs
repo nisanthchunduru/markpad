@@ -16,10 +16,10 @@ const profile = join(workspace, 'profile');
 const file = join(workspace, 'editing.md');
 await mkdir(join(profile, 'User'), { recursive: true });
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({
-  'workbench.startupEditor': 'none', 'window.title': 'Tyler Editing Regression',
+  'workbench.startupEditor': 'none', 'window.title': 'Markpad Editing Regression',
   'window.restoreWindows': 'none', 'security.workspace.trust.enabled': false,
   'chat.disableAIFeatures': true, 'files.autoSave': 'off', 'editor.formatOnSave': false,
-  'tyler.theme': 'github', 'workbench.editorAssociations': { '*.md': 'tyler.editor' }
+  'markpad.theme': 'github', 'workbench.editorAssociations': { '*.md': 'markpad.editor' }
 }));
 await writeFile(file, '');
 const server = createServer();
@@ -27,10 +27,10 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
 await new Promise(resolve => server.close(resolve));
 const code = process.env.VSCODE_BIN ?? 'code';
-if (process.env.TYLER_VSIX) await execute(code, ['--user-data-dir', profile, '--extensions-dir', join(workspace, 'extensions'), '--install-extension', resolve(process.env.TYLER_VSIX), '--force']);
+if (process.env.MARKPAD_VSIX) await execute(code, ['--user-data-dir', profile, '--extensions-dir', join(workspace, 'extensions'), '--install-extension', resolve(process.env.MARKPAD_VSIX), '--force']);
 await execute(code, [
   '--user-data-dir', profile, '--extensions-dir', join(workspace, 'extensions'),
-  ...(process.env.TYLER_VSIX ? [] : ['--extensionDevelopmentPath=' + root]), '--remote-debugging-port=' + port,
+  ...(process.env.MARKPAD_VSIX ? [] : ['--extensionDevelopmentPath=' + root]), '--remote-debugging-port=' + port,
   '--skip-welcome', '--skip-release-notes', '--new-window', file
 ]);
 console.log('VS Code regression artifacts:', workspace);
@@ -48,7 +48,7 @@ for (let attempt = 0; attempt < 80 && !frame; attempt++) {
   }
   if (!frame) await new Promise(resolve => setTimeout(resolve, 250));
 }
-assert.ok(frame, 'Tyler webview loaded in VS Code');
+assert.ok(frame, 'Markpad webview loaded in VS Code');
 page.setDefaultTimeout(5000);
 const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
 const passed = [];

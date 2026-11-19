@@ -1,9 +1,10 @@
 {
   "name": "markpad",
-  "displayName": "Tyler: Typora-inspired Markdown Editor",
+  "displayName": "Markpad: Typora-inspired Markdown Editor",
   "description": "A Typora-inspired, live-preview Markdown editor inside VS Code.",
   "version": "0.1.54",
   "publisher": "nisanthchunduru",
+  "repository": "https://github.com/nisanthchunduru/markpad.git",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
@@ -13,13 +14,13 @@
   ],
   "main": "./build/extension.js",
   "activationEvents": [
-    "onCustomEditor:tyler.editor"
+    "onCustomEditor:markpad.editor"
   ],
   "contributes": {
     "configuration": {
-      "title": "Tyler",
+      "title": "Markpad",
       "properties": {
-        "tyler.theme": {
+        "markpad.theme": {
           "type": "string",
           "enum": [
             "github",
@@ -31,14 +32,14 @@
             "whitey"
           ],
           "default": "github",
-          "description": "Writing theme used by Tyler Markdown editors."
+          "description": "Writing theme used by Markpad Markdown editors."
         }
       }
     },
     "customEditors": [
       {
-        "viewType": "tyler.editor",
-        "displayName": "Tyler",
+        "viewType": "markpad.editor",
+        "displayName": "Markpad",
         "selector": [
           {
             "filenamePattern": "*.md"
@@ -55,15 +56,15 @@
     ],
     "commands": [
       {
-        "command": "tyler.open",
-        "title": "Open in Tyler",
+        "command": "markpad.open",
+        "title": "Open in Markpad",
         "category": "Markdown"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "tyler.open",
+          "command": "markpad.open",
           "when": "resourceExtname == .md || resourceExtname == .markdown",
           "group": "navigation"
         }

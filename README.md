@@ -1,6 +1,6 @@
-# tyler
+# markpad
 
-> ⚠️ Tyler is currently in active development. Expect bugs.
+> ⚠️ Markpad is currently in active development. Expect bugs.
 
 Typora-inspired markdown editor for VSCode
 
@@ -9,8 +9,8 @@ Typora-inspired markdown editor for VSCode
 ## Install
 
 ```
-git clone https://github.com/nisanthchunduru/tyler.git
-cd tyler
+git clone https://github.com/nisanthchunduru/markpad.git
+cd markpad
 npm ci
 npm run build
 npx @vscode/vsce package --no-dependencies --allow-missing-repository -o build/

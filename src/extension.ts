@@ -36,10 +36,10 @@ function imageUris(document: vscode.TextDocument, webview: vscode.Webview): Reco
 }
 
 function selectedTheme(): ThemeName {
-  const settings = vscode.workspace.getConfiguration('tyler');
+  const settings = vscode.workspace.getConfiguration('markpad');
   const saved = settings.inspect<string>('theme');
   const hasSelection = saved?.globalValue !== undefined || saved?.workspaceValue !== undefined || saved?.workspaceFolderValue !== undefined;
-  const configured = hasSelection ? settings.get<string>('theme') : vscode.workspace.getConfiguration('vscode-typora').get<string>('theme');
+  const configured = hasSelection ? settings.get<string>('theme') : vscode.workspace.getConfiguration('tyler').get<string>('theme') ?? vscode.workspace.getConfiguration('vscode-typora').get<string>('theme');
   return isThemeName(configured) ? configured : 'github';
 }
 
@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (event.document.uri.toString() === document.uri.toString()) void sendDocument();
       });
       const configurationChanges = vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('tyler.theme') || event.affectsConfiguration('vscode-typora.theme')) void webview.postMessage({ type: 'theme', theme: selectedTheme() });
+        if (event.affectsConfiguration('markpad.theme') || event.affectsConfiguration('tyler.theme') || event.affectsConfiguration('vscode-typora.theme')) void webview.postMessage({ type: 'theme', theme: selectedTheme() });
       });
       const messages = webview.onDidReceiveMessage(async (message: IncomingMessage) => {
         if (message.type === 'ready') {
@@ -83,8 +83,8 @@ export function activate(context: vscode.ExtensionContext): void {
         if (message.type === 'save') { await document.save(); return; }
         if (message.type === 'theme') {
           if (!isThemeName(message.theme)) return;
-          const settings = vscode.workspace.getConfiguration('tyler');
-          const legacyWorkspaceTheme = vscode.workspace.getConfiguration('vscode-typora').inspect('theme')?.workspaceValue;
+          const settings = vscode.workspace.getConfiguration('markpad');
+          const legacyWorkspaceTheme = vscode.workspace.getConfiguration('tyler').inspect('theme')?.workspaceValue ?? vscode.workspace.getConfiguration('vscode-typora').inspect('theme')?.workspaceValue;
           const target = settings.inspect('theme')?.workspaceValue === undefined && legacyWorkspaceTheme === undefined ? vscode.ConfigurationTarget.Global : vscode.ConfigurationTarget.Workspace;
           await settings.update('theme', message.theme, target);
           return;
@@ -116,11 +116,11 @@ export function activate(context: vscode.ExtensionContext): void {
       webviewPanel.onDidDispose(() => { changes.dispose(); configurationChanges.dispose(); messages.dispose(); });
     }
   };
-  context.subscriptions.push(vscode.window.registerCustomEditorProvider('tyler.editor', provider, { webviewOptions: { retainContextWhenHidden: true }, supportsMultipleEditorsPerDocument: true }));
-  context.subscriptions.push(vscode.commands.registerCommand('tyler.open', async () => {
+  context.subscriptions.push(vscode.window.registerCustomEditorProvider('markpad.editor', provider, { webviewOptions: { retainContextWhenHidden: true }, supportsMultipleEditorsPerDocument: true }));
+  context.subscriptions.push(vscode.commands.registerCommand('markpad.open', async () => {
     const uri = vscode.window.activeTextEditor?.document.uri;
-    if (uri) await vscode.commands.executeCommand('vscode.openWith', uri, 'tyler.editor');
-    else vscode.window.showInformationMessage('Open a Markdown file before using Tyler.');
+    if (uri) await vscode.commands.executeCommand('vscode.openWith', uri, 'markpad.editor');
+    else vscode.window.showInformationMessage('Open a Markdown file before using Markpad.');
   }));
 }
 

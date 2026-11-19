@@ -18,7 +18,7 @@ For a focus bug, avoid shortcuts that bypass the gesture. For example, click the
 
 If a control shouldn't move the next paragraph, measure the paragraph’s position before the control appears, while it’s visible, and after it disappears. Use screenshots to spot overlap or poor contrast. If a shared style changes, verify it across all seven themes.
 
-When comparing Tyler with Typora, use the same file, theme, zoom, and a similar writing-pane width. If you only read Typora’s CSS, describe it as a stylesheet comparison, not a visual one.
+When comparing Markpad with Typora, use the same file, theme, zoom, and a similar writing-pane width. If you only read Typora’s CSS, describe it as a stylesheet comparison, not a visual one.
 
 ### Test what happens while an edit is still in flight
 
@@ -26,7 +26,7 @@ For parser changes, verify that Markdown survives parsing and serialization with
 
 ### Run the smallest test that exercises the change
 
-After cloning Tyler, run `npm ci` from the repo root. Use `npm test` to validate TypeScript, build Tyler, and run unit tests. Before committing an editing change, run the relevant desktop scenario, for example:
+After cloning Markpad, run `npm ci` from the repo root. Use `npm test` to validate TypeScript, build Markpad, and run unit tests. Before committing an editing change, run the relevant desktop scenario, for example:
 
 ```sh
 npm run test:editing -- 'typing leading hashes'
@@ -41,7 +41,7 @@ To verify an installable build, run the relevant scenario against the VSIX rathe
 ```sh
 npm test &&
   npx @vscode/vsce package --no-dependencies --allow-missing-repository -o build/ &&
-  TYLER_VSIX="build/markpad-$(node -p "require('./package.json').version").vsix" npm run test:editing -- 'typing leading hashes'
+  MARKPAD_VSIX="build/markpad-$(node -p "require('./package.json').version").vsix" npm run test:editing -- 'typing leading hashes'
 ```
 
 ### Report what passed and what didn't
