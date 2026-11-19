@@ -37,6 +37,7 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 
 - REQ-020: When the user clicks on a block, the browser's native caret shall appear at the click position within that block.
 - REQ-021: Tyler shall not intercept or reposition the native caret placement.
+- REQ-022: When the user moves the caret or changes the selection without editing, Tyler shall leave the Markdown and the document’s modified state unchanged.
 
 ### Block operations
 
@@ -65,6 +66,7 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-042: When the host document content changes externally, Tyler shall reconcile the incoming text with the local draft and restore a valid selection and scroll position after rendering.
 - REQ-044: When the host sends identical content, Tyler shall leave the editable DOM, selection, scroll position, and undo history unchanged.
 - REQ-045: When an acknowledgement arrives after additional local typing, Tyler shall retain that typing and send it using the acknowledged document version.
+- REQ-054: When the user saves an edited document, Tyler shall preserve the Markdown outside the edited region.
 - REQ-046: When the user presses Cmd/Ctrl+S in Tyler, Tyler shall wait for outstanding local edits to reach the host before requesting a document save.
 - REQ-047: When an empty document is first opened, Tyler shall create an editable blank block before accepting keyboard input.
 - REQ-043: If a host document change conflicts with unsaved webview edits, Tyler shall display a conflict banner with "Use latest file" and "Keep my draft" options.
@@ -142,11 +144,3 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-130: Tyler shall resolve relative image paths against the document's directory.
 - REQ-131: Tyler shall render resolved images as `<img>` elements with the image's alt text.
 - REQ-132: Tyler shall support HTTPS image URLs without resolution.
-
-## Editing verification
-
-- REQ-140: When the editing regression suite runs, the test harness shall open Tyler in an isolated desktop VS Code profile and exercise mouse clicks and keyboard events.
-- REQ-141: When a regression test saves a document, the test harness shall verify the Markdown on disk and the absence of a dirty tab, rather than relying only on rendered text.
-- REQ-142: When a regression test fails, the test harness shall retain a screenshot, the editor DOM, and a test report in its temporary workspace.
-
-Known coverage limits: the desktop suite currently targets macOS VS Code. IME composition, rich-text paste, nested-list semantics, complex YAML, Markdown extensions, and exhaustive cross-block selections are not fully verified. Frontmatter is read-only in Tyler; use VS Code's Text Editor to edit it.

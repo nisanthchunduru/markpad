@@ -56,7 +56,9 @@ const clipboard = process.platform === 'darwin' ? (await execute('pbpaste')).std
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 
+const scenarioFilter = process.argv.slice(2).join(' ').toLowerCase();
 async function step(name, run) {
+  if (!name.toLowerCase().includes(scenarioFilter)) return;
   await run(); passed.push(name); console.log('PASS:', name);
 }
 async function save(expected) {
@@ -490,6 +492,7 @@ try {
     await expect(frame.locator('#zoomLabel')).toHaveText('100%');
     assert.equal(await readFile(file, 'utf8'), before);
   });
+  assert.ok(passed.length, `No editing scenario matched: ${scenarioFilter}`);
   assert.deepEqual(errors, []);
   await page.screenshot({ path: join(workspace, 'passed.png') });
 } catch (error) {
