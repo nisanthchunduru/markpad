@@ -232,6 +232,22 @@ try {
     await save('# **Hel?**\n**lo** world\n\nTail!\n');
   });
 
+  await step('Shift+Enter line and paragraph breaks stay inside one bullet on save and reload', async () => {
+    await fixture('  * First\n- Neighbor', 'Neighbor');
+    const first = frame.locator('.md-bullet .md-list-content').first();
+    await first.click(); await page.keyboard.press(mod + '+ArrowRight');
+    await page.keyboard.press('Shift+Enter'); await page.keyboard.type('Next line');
+    const lines = '  * First  \n    Next line';
+    await save(lines + '\n- Neighbor');
+    await page.keyboard.press('Shift+Enter'); await page.keyboard.press('Shift+Enter');
+    await page.keyboard.type('Next paragraph');
+    const paragraphs = lines + '\n\n    Next paragraph';
+    await save(paragraphs + '\n- Neighbor');
+    await reloadEditor();
+    await expect(frame.locator('#write > .md-bullet')).toHaveCount(2);
+    assert.equal(await frame.locator('.md-bullet .md-list-content').first().textContent(), 'First\nNext line\n\nNext paragraph');
+  });
+
   await step('list continuation, empty-item exit and subsequent typing work', async () => {
     await fixture('- apples\n', 'apples');
     await frame.locator('.md-list-content').click();

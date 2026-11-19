@@ -1,6 +1,7 @@
 import { type BlockNode, blocksToMarkdown, parseMarkdownToBlocks, renderBlockToHtml, generateId } from './markdown';
 import { blockPrefix, classifyBlock, fromContent, inlineMarkdown, readBlock } from './serialize';
 import { type SelectionBookmark, captureSelection, contentElement, restoreSelection, caret, plainText } from './selection';
+import { listMarkdown, listContent } from './list-content';
 import { EditHistory } from './history';
 import { fenceCode, highlightedCode, withFenceLanguage } from './fences';
 import { installFenceLanguageInputs } from './language-picker';
@@ -237,7 +238,8 @@ export class MarkdownEditor {
       let prefix = list ? blockPrefix(block) : '';
       if (block.type === 'task') prefix = prefix.replace(/\[[xX]\]/, '[ ]');
       if (block.type === 'ordered') prefix = prefix.replace(/\d+/, number => String(Number(number) + 1));
-      target = { ...classifyBlock(prefix + right), separatorBefore: list || block.type === 'heading' ? '\n' : '\n\n' };
+      const nextRaw = list && block.type !== 'blockquote' ? listMarkdown(prefix, right) : prefix + right;
+      target = { ...classifyBlock(nextRaw), separatorBefore: list || block.type === 'heading' ? '\n' : '\n\n' };
       this.blocks.splice(index + 1, 0, target);
     }
     this.render();
@@ -250,6 +252,19 @@ export class MarkdownEditor {
     if (!range || range.startContainer.parentElement?.closest('[contenteditable="false"]')) return;
     const before = this.snapshot();
     range.deleteContents();
+    const block = this.selectedBlock();
+    if (text === '\n' && block && ['bullet', 'ordered', 'task'].includes(block.type)) {
+      const br = document.createElement('br');
+      range.insertNode(br);
+      const item = contentElement(this.root.querySelector<HTMLElement>(`[data-cid="${block.id}"]`)!);
+      const tail = range.cloneRange(); tail.selectNodeContents(item); tail.setStartAfter(br);
+      if (!plainText(tail.cloneContents()) && !item.querySelector('[data-placeholder]')) {
+        const placeholder = document.createElement('br'); placeholder.dataset.placeholder = 'true'; br.after(placeholder);
+      }
+      range.setStartAfter(br); range.collapse(true);
+      const selection = window.getSelection()!; selection.removeAllRanges(); selection.addRange(range);
+      this.syncDom(); this.rememberDom(); this.commit(before); return;
+    }
     const node = document.createTextNode(text);
     range.insertNode(node);
     if (text.endsWith('\n') && (!node.nextSibling || !node.nextSibling.textContent && !node.nextSibling.nextSibling)) {
@@ -330,7 +345,8 @@ export class MarkdownEditor {
   private indentList(outdent: boolean): void {
     const block = this.selectedBlock(); if (!block || !['bullet', 'ordered', 'task'].includes(block.type)) return;
     const before = this.snapshot(); const bookmark = captureSelection(this.root);
-    block.raw = outdent ? block.raw.replace(/^ {1,2}/, '') : '  ' + block.raw;
+    const prefix = blockPrefix(block);
+    block.raw = listMarkdown(outdent ? prefix.replace(/^ {1,2}/, '') : '  ' + prefix, listContent(block.raw, prefix));
     this.render(); restoreSelection(this.root, bookmark); this.commit(before);
   }
 

@@ -1,4 +1,5 @@
 import { type BlockNode, generateId } from './markdown';
+import { listMarkdown, listPrefix } from './list-content';
 import { contentElement, plainText } from './selection';
 
 export function inlineMarkdown(node: Node): string {
@@ -27,13 +28,13 @@ export function inlineMarkdown(node: Node): string {
 export function blockPrefix(block: BlockNode): string {
   if (block.type === 'heading') return '#'.repeat(block.level ?? 1) + ' ';
   if (block.type === 'blockquote') return '> ';
-  if (block.type === 'task') return block.raw.match(/^\s*[-+*]\s+\[[ xX]\]\s*/)?.[0] ?? '- [ ] ';
-  if (block.type === 'bullet') return block.raw.match(/^\s*[-+*]\s+/)?.[0] ?? '- ';
-  if (block.type === 'ordered') return block.raw.match(/^\s*\d+[.)]\s+/)?.[0] ?? '1. ';
+  if (block.type === 'task') return block.raw.match(/^[ \t]*[-+*][ \t]+\[[ xX]\][ \t]*/)?.[0] ?? '- [ ] ';
+  if (block.type === 'bullet' || block.type === 'ordered') return listPrefix(block.raw);
   return '';
 }
 
 export function fromContent(block: BlockNode, content: string): string {
+  if (['bullet', 'task', 'ordered'].includes(block.type)) return listMarkdown(blockPrefix(block), content);
   return block.type === 'blockquote' ? content.split('\n').map(line => '> ' + line).join('\n') : blockPrefix(block) + content;
 }
 
@@ -53,7 +54,7 @@ export function readBlock(block: BlockNode, element: HTMLElement): string {
   const content = contentElement(element);
   const text = content.innerHTML.toLowerCase() === '<br>' ? '' : Array.from(content.childNodes, inlineMarkdown).join('');
   if (block.type === 'task') {
-    return blockPrefix(block).replace(/\[[ xX]\]/, element.querySelector<HTMLInputElement>('input')?.checked ? '[x]' : '[ ]') + text;
+    return listMarkdown(blockPrefix(block).replace(/\[[ xX]\]/, element.querySelector<HTMLInputElement>('input')?.checked ? '[x]' : '[ ]'), text);
   }
   return fromContent(block, text);
 }

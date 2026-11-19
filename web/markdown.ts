@@ -1,3 +1,4 @@
+import { listPrefix, listContent, listItemEnd } from './list-content';
 import { escapeHtml, fenceCode, fenceLanguage, highlightedCode } from './fences';
 
 export interface BlockNode {
@@ -41,16 +42,13 @@ export function parseMarkdownToBlocks(markdown: string): BlockNode[] {
       while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) { fenceLines.push(lines[i]); i++; }
       if (i < lines.length) { fenceLines.push(lines[i]); i++; }
       blocks.push({ id: generateId(), type: 'fence', lang, raw: fenceLines.join('\n') });
-    } else if (/^\s*[-+*]\s+\[[ xX]\]\s/.test(line)) {
-      const checked = /\[[xX]\]/.test(line);
-      blocks.push({ id: generateId(), type: 'task', checked, raw: line });
-      i++;
-    } else if (/^\s*[-+*]\s+/.test(line)) {
-      blocks.push({ id: generateId(), type: 'bullet', raw: line });
-      i++;
-    } else if (/^\s*\d+[.)]\s+/.test(line)) {
-      blocks.push({ id: generateId(), type: 'ordered', raw: line });
-      i++;
+    } else if (listPrefix(line)) {
+      const end = listItemEnd(lines, i);
+      const raw = lines.slice(i, end).join('\n');
+      const task = /^\s*[-+*][ \t]+\[([ xX])\][ \t]/.exec(line);
+      const type = task ? 'task' : /^\s*\d/.test(line) ? 'ordered' : 'bullet';
+      blocks.push({ id: generateId(), type, checked: task ? task[1] !== ' ' : undefined, raw });
+      i = end;
     } else if (/^>\s?/.test(line)) {
       const quoteLines = [line];
       while (i + 1 < lines.length && /^>\s?/.test(lines[i + 1])) { i++; quoteLines.push(lines[i]); }
@@ -149,17 +147,17 @@ export function renderBlockToHtml(block: BlockNode, images: Record<string, strin
       return `<blockquote${cid} class="md-blockquote${focusClass}">${renderInline(text, images)}</blockquote>`;
     }
     case 'bullet': {
-      const text = block.raw.replace(/^\s*[-+*]\s+/, '');
+      const text = listContent(block.raw, listPrefix(block.raw));
       return `<div${cid} class="md-list-item md-bullet${focusClass}"><span class="md-list-marker" contenteditable="false">•</span><span class="md-list-content">${renderInline(text, images) || '<br>'}</span></div>`;
     }
     case 'ordered': {
       const match = block.raw.match(/^\s*(\d+)[.)]\s+/);
       const num = match ? match[1] : '1';
-      const text = block.raw.replace(/^\s*\d+[.)]\s+/, '');
+      const text = listContent(block.raw, listPrefix(block.raw));
       return `<div${cid} class="md-list-item md-ordered${focusClass}"><span class="md-list-marker" contenteditable="false">${num}.</span><span class="md-list-content">${renderInline(text, images) || '<br>'}</span></div>`;
     }
     case 'task': {
-      const text = block.raw.replace(/^\s*[-+*]\s+\[[ xX]\]\s*/, '');
+      const text = listContent(block.raw, block.raw.match(/^[ \t]*[-+*][ \t]+\[[ xX]\][ \t]*/)?.[0] ?? listPrefix(block.raw));
       const checked = block.checked ? 'checked' : '';
       return `<div${cid} class="md-list-item md-task${focusClass}"><input type="checkbox" ${checked} class="md-task-checkbox"><span class="md-list-content">${renderInline(text, images) || '<br>'}</span></div>`;
     }

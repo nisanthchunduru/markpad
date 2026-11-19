@@ -53,6 +53,7 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-156: When the user types a space immediately after one to six leading hash characters in an existing heading, Tyler shall set its level to the hash count, consume the typed prefix, preserve inline formatting, and keep the caret at the beginning of the title. Hashes elsewhere and runs longer than six shall remain literal.
 - REQ-155: When the user presses unmodified Backspace with a collapsed caret at the start of an H1–H6 heading, Tyler shall convert it to a separate ordinary paragraph, preserving inline formatting and the caret at its start in one undoable edit. Backspace elsewhere shall retain its normal behavior.
 - REQ-031: When the user presses Backspace on an empty block, Tyler shall delete the block and move the cursor to the previous block.
+- REQ-157: While the caret is in a list item, when the user presses Shift+Enter, Tyler shall start a new line within that item. Two consecutive Shift+Enter presses shall start a new paragraph within the same item, including after saving and reopening the file.
 - REQ-032: When the user presses Shift+Enter, Tyler shall insert a line break within the current block.
 - REQ-033: When the user presses Tab on a list item, Tyler shall indent the item by prepending two spaces to its raw Markdown.
 - REQ-034: When the user presses Shift+Tab on a list item, Tyler shall outdent the item by removing up to two leading spaces from its raw Markdown.

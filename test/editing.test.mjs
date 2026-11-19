@@ -2,8 +2,21 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
-const output = await build({ stdin: { contents: "export * from './web/history'; export * from './web/sync'; export * from './web/markdown';", resolveDir: process.cwd() }, bundle: true, platform: 'node', format: 'esm', write: false });
-const { EditHistory, DocumentSync, parseMarkdownToBlocks, blocksToMarkdown, renderInline } = await import('data:text/javascript;base64,' + Buffer.from(output.outputFiles[0].text).toString('base64'));
+const output = await build({ stdin: { contents: "export * from './web/history'; export * from './web/sync'; export * from './web/markdown'; export * from './web/list-content';", resolveDir: process.cwd() }, bundle: true, platform: 'node', format: 'esm', write: false });
+const { EditHistory, DocumentSync, parseMarkdownToBlocks, blocksToMarkdown, renderInline, listContent, listMarkdown } = await import('data:text/javascript;base64,' + Buffer.from(output.outputFiles[0].text).toString('base64'));
+
+test('list breaks round-trip inside the item without absorbing sibling bullets or unindented paragraphs', () => {
+  for (const [prefix, indent] of [['- ', '  '], ['  * ', '    '], ['10. ', '    '], ['- [x] ', '  ']]) {
+    const content = 'First\n**Second**\n\nThird';
+    const raw = prefix + 'First  \n' + indent + '**Second**\n\n' + indent + 'Third';
+    assert.equal(listMarkdown(prefix, content), raw);
+    assert.equal(listContent(raw, prefix), content);
+    const source = raw + '\n- Sibling\n\nOutside';
+    const blocks = parseMarkdownToBlocks(source);
+    assert.deepEqual(blocks.map(block => block.raw), [raw, '- Sibling', 'Outside']);
+    assert.equal(blocksToMarkdown(blocks), source);
+  }
+});
 
 test('an empty file is an initial document, not an acknowledgement to skip', () => {
   const sync = new DocumentSync();
