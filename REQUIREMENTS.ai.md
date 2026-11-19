@@ -24,6 +24,11 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-014: Tyler shall render YAML frontmatter as a two-column key-value table.
 - REQ-009: When Tyler renders consecutive fenced code blocks, the active theme shall separate them visually using its Typora-inspired vertical margins without inserting editable rows or changing the Markdown.
 - REQ-015: Tyler shall render fenced code blocks as `<pre><code>` with a language label, supporting both top-level and indented fences.
+- REQ-150: When a fenced code block declares a supported language or alias, Tyler shall syntax-highlight its literal code locally, including after edits. Unlabeled, unknown-language and oversized blocks shall remain readable as plain code.
+- REQ-154: While a fence’s language input has focus, when the user presses Cmd/Ctrl+A, Tyler shall select the entire input value without changing the document selection or committing the language.
+- REQ-153: When a pointer click transfers focus from fence code to its language input, Tyler shall keep the input visible and focused for typing without requiring a second click.
+- REQ-152: While the caret is inside a fence or its language input has focus, Tyler shall display that fence’s inline language input below the right edge of the code panel, outside its horizontal scroll area, without shifting subsequent blocks when it appears or disappears.
+- REQ-151: When the user edits a fence’s inline language input, Tyler shall accept a language identifier in a plain text field without a dropdown, or an empty value to remove the language. Enter or leaving the field shall apply a valid value, and Escape shall discard the draft. Applying a change shall update the opening fence without changing its code, support undo/redo and persist on save; canceling shall not edit the document.
 - REQ-016: Tyler shall render Markdown tables as HTML `<table>` elements with column alignment.
 - REQ-017: Tyler shall render task list items with interactive checkboxes.
 - REQ-018: When the user toggles a task checkbox, Tyler shall update the block's raw Markdown (`[ ]` ↔ `[x]`) and sync the change to the host.

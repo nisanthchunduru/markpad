@@ -1,3 +1,5 @@
+import { escapeHtml, fenceCode, fenceLanguage, highlightedCode } from './fences';
+
 export interface BlockNode {
   id: string;
   type: 'paragraph' | 'heading' | 'blockquote' | 'bullet' | 'ordered' | 'task' | 'fence' | 'rule' | 'table' | 'blank' | 'frontmatter';
@@ -33,7 +35,7 @@ export function parseMarkdownToBlocks(markdown: string): BlockNode[] {
       blocks.push({ id: generateId(), type: 'heading', level, raw: line });
       i++;
     } else if (/^\s*```/.test(line)) {
-      const lang = line.replace(/^\s*```/, '').trim();
+      const lang = fenceLanguage(line);
       const fenceLines = [line];
       i++;
       while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) { fenceLines.push(lines[i]); i++; }
@@ -94,10 +96,6 @@ function separateSourceWhitespace(blocks: BlockNode[]): BlockNode[] {
 
 export function blocksToMarkdown(blocks: BlockNode[]): string {
   return blocks.map((block, index) => (index ? block.separatorBefore ?? '\n' : '') + block.raw).join('');
-}
-
-export function escapeHtml(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export function renderInline(text: string, images: Record<string, string> = {}, depth = 0): string {
@@ -166,11 +164,9 @@ export function renderBlockToHtml(block: BlockNode, images: Record<string, strin
       return `<div${cid} class="md-list-item md-task${focusClass}"><input type="checkbox" ${checked} class="md-task-checkbox"><span class="md-list-content">${renderInline(text, images) || '<br>'}</span></div>`;
     }
     case 'fence': {
-      const lines = block.raw.split('\n');
-      const codeLines = lines.slice(1, lines[lines.length - 1]?.trimStart().startsWith('```') ? -1 : undefined);
-      const lang = block.lang ? ` data-lang="${escapeHtml(block.lang)}"` : '';
-      const langLabel = block.lang ? `<span class="md-fence-lang" contenteditable="false">${escapeHtml(block.lang)}</span>` : '';
-      return `<pre${cid} class="md-fence${focusClass}"${lang}>${langLabel}<code>${escapeHtml(codeLines.join('\n')) || '<br>'}</code></pre>`;
+      const language = block.lang ?? '';
+      const picker = `<span class="md-language-control" contenteditable="false"><input type="text" class="md-fence-lang" aria-label="Code block language" value="${escapeHtml(language)}" placeholder="Set language…" pattern="[^\\s\x60]+" autocomplete="off" spellcheck="false" title="Code block language (blank for plain text)"></span>`;
+      return `<div${cid} class="md-fence${focusClass}" data-lang="${escapeHtml(language)}"><pre><code>${highlightedCode(fenceCode(block.raw), language)}</code></pre>${picker}</div>`;
     }
     case 'table': {
       const rows = block.raw.split('\n').filter(r => r.trim());

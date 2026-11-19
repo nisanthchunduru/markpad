@@ -220,6 +220,57 @@ try {
     await save('```js\nconst typed = true;\n```');
   });
 
+  await step('only the active fence shows its inline language field; Enter, Escape and blur preserve Markdown', async () => {
+    const body = 'const sample = "<tag>";';
+    const source = language => '```' + language + '\n' + body + '\n```\n\nBelow the fence\n\n```json\n{}\n```';
+    await fixture(source(''), body);
+    const code = frame.locator('pre code').first();
+    const para = frame.locator('.md-paragraph').filter({ hasText: 'Below the fence' });
+    const input = frame.getByRole('textbox', { name: 'Code block language', exact: true });
+    const paragraphTop = () => para.evaluate(el => el.getBoundingClientRect().top + el.closest('#write').scrollTop);
+    await para.click(); await expect(input).toHaveCount(0);
+    const inactiveTop = await paragraphTop();
+    await code.click(); await expect(input).toHaveCount(1);
+    assert.equal(await paragraphTop(), inactiveTop, 'Showing the field must not shift the next paragraph');
+    assert.equal(await input.evaluate(el => el.list), null, 'No language suggestions dropdown');
+    const panel = await frame.locator('.md-fence > pre').first().boundingBox();
+    const field = await input.boundingBox();
+    assert.ok(field.y >= panel.y + panel.height - 1 && Math.abs(field.x + field.width - panel.x - panel.width) < 10);
+    const typeLanguage = async value => {
+      await input.click();
+      await expect(input).toBeFocused();
+      await expect(input).toBeVisible();
+      const length = (await input.inputValue()).length;
+      await page.keyboard.press('End');
+      if (length) await page.keyboard.press('ArrowLeft');
+      const session = await page.context().newCDPSession(page);
+      const shortcut = { key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65, modifiers: mod === 'Meta' ? 4 : 2 };
+      try {
+        await session.send('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...shortcut });
+        await session.send('Input.dispatchKeyEvent', { type: 'keyUp', ...shortcut });
+      } finally { await session.detach(); }
+      await expect.poll(() => input.evaluate(el => [el.selectionStart, el.selectionEnd])).toEqual([0, length]);
+      if (value) await page.keyboard.type(value, { delay: 25 });
+      else await page.keyboard.press('Backspace');
+      await expect(input).toHaveValue(value);
+      await expect(input).toBeFocused();
+    };
+    await typeLanguage('js'); await page.keyboard.press('Enter');
+    await expect(code.locator('.hljs-keyword')).toHaveText('const');
+    await expect(code).toHaveText(body); await save(source('js'));
+    await typeLanguage('python'); await page.keyboard.press('Escape'); await expect(input).toHaveValue('js');
+    await typeLanguage('my-language');
+    await page.screenshot({ path: join(workspace, 'inline-language-focused.png') });
+    await para.click(); await expect(input).toHaveCount(0);
+    assert.equal(await paragraphTop(), inactiveTop, 'Hiding the field must not shift the next paragraph');
+    await expect(code.locator('span')).toHaveCount(0); await save(source('my-language'));
+    await frame.locator('pre code').last().click(); await expect(input).toHaveValue('json');
+    await code.click(); await expect(input).toHaveValue('my-language');
+    await typeLanguage(''); await page.keyboard.press('Enter'); await save(source(''));
+    await page.keyboard.press(mod + '+z'); await save(source('my-language'));
+    await page.keyboard.press('ArrowDown'); await expect(input).toHaveCount(0);
+  });
+
   await verifyCodeNavigation({ frame, page, mod, fixture, save, step });
 
   await step('Shift+Enter persists a line break rather than deleting it', async () => {
@@ -371,7 +422,7 @@ try {
         const fenceStyle = getComputedStyle(first);
         const expectedFenceGap = Math.max(parseFloat(fenceStyle.marginBottom), parseFloat(getComputedStyle(second).marginTop));
         const fenceGap = second.getBoundingClientRect().top - first.getBoundingClientRect().bottom;
-        return { paragraphGap, lineHeight, headings, count: root.children.length, fenceGap, expectedFenceGap, fenceInset: parseFloat(fenceStyle.paddingLeft) };
+        return { paragraphGap, lineHeight, headings, count: root.children.length, fenceGap, expectedFenceGap, fenceInset: parseFloat(getComputedStyle(first.querySelector('pre')).paddingLeft) };
       });
       assert.equal(metrics.count, 17, theme + ': no source-only separator rows');
       assert.ok(metrics.fenceGap > 0 && Math.abs(metrics.fenceGap - metrics.expectedFenceGap) < 1, theme + ': adjacent fences have their themed visual gap');

@@ -2,7 +2,7 @@ export interface CaretPoint { id: string; offset: number }
 export interface SelectionBookmark { anchor: CaretPoint; focus: CaretPoint }
 
 export function contentElement(block: HTMLElement): HTMLElement {
-  return block.querySelector<HTMLElement>('.md-list-content, .md-fence > code') ?? block;
+  return block.querySelector<HTMLElement>('.md-list-content, .md-fence > pre > code') ?? block;
 }
 
 export function plainText(node: Node): string {

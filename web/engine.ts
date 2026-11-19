@@ -2,6 +2,8 @@ import { type BlockNode, blocksToMarkdown, parseMarkdownToBlocks, renderBlockToH
 import { blockPrefix, classifyBlock, fromContent, inlineMarkdown, readBlock } from './serialize';
 import { type SelectionBookmark, captureSelection, contentElement, restoreSelection, caret, plainText } from './selection';
 import { EditHistory } from './history';
+import { fenceCode, highlightedCode, withFenceLanguage } from './fences';
+import { installFenceLanguageInputs } from './language-picker';
 
 interface Snapshot { blocks: BlockNode[]; html: string; selection: SelectionBookmark | null; scroll: number }
 
@@ -15,6 +17,7 @@ export class MarkdownEditor {
   private lastSelection: SelectionBookmark | null = null;
 
   constructor(readonly root: HTMLElement, private changed: () => void) {
+    installFenceLanguageInputs(root, (id, language) => this.changeFenceLanguage(id, language));
     root.addEventListener('beforeinput', event => this.onBeforeInput(event));
     root.addEventListener('input', event => this.onInput(event as InputEvent));
     root.addEventListener('compositionstart', () => { this.beforeInput = this.snapshot(); this.composition = true; });
@@ -123,7 +126,13 @@ export class MarkdownEditor {
     for (const block of this.blocks) {
       const previous = old.get(block.id);
       const element = this.root.querySelector<HTMLElement>(`[data-cid="${block.id}"]`);
-      if (!element || !previous || previous.type === block.type && previous.level === block.level) continue;
+      if (!element || !previous) continue;
+      if (block.type === 'fence' && previous.type === 'fence' && block.raw !== previous.raw && block.lang) {
+        const code = contentElement(element);
+        const html = highlightedCode(fenceCode(block.raw), block.lang);
+        if (code.innerHTML !== html) { code.innerHTML = html; rendered = true; }
+      }
+      if (previous.type === block.type && previous.level === block.level) continue;
       const difference = blockPrefix(block).length - blockPrefix(previous).length;
       if (bookmark) for (const point of [bookmark.anchor, bookmark.focus]) if (point.id === block.id) point.offset = Math.max(0, point.offset - difference);
       element.outerHTML = renderBlockToHtml(block, this.images);
@@ -253,6 +262,24 @@ export class MarkdownEditor {
     this.syncDom(); this.rememberDom(); this.commit(before);
   }
 
+  private changeFenceLanguage(id: string, language: string): void {
+    const block = this.blocks.find(block => block.id === id && block.type === 'fence');
+    if (!block || (block.lang ?? '') === language) return;
+    const before = this.snapshot();
+    block.lang = language;
+    block.raw = withFenceLanguage(block.raw, language);
+    const fence = this.root.querySelector<HTMLElement>(`[data-cid="${id}"]`)!;
+    fence.dataset.lang = language;
+    fence.querySelector('input')!.defaultValue = language;
+    const code = contentElement(fence);
+    const selection = window.getSelection();
+    const bookmark = selection?.focusNode && code.contains(selection.focusNode) ? captureSelection(this.root) : null;
+    code.innerHTML = highlightedCode(fenceCode(block.raw), language);
+    if (bookmark) restoreSelection(this.root, bookmark, false);
+    this.baseline.set(id, fence.innerHTML);
+    this.commit(before);
+  }
+
   cycleHeading(): void {
     const block = this.selectedBlock();
     const level = block?.type === 'heading' ? ((block.level ?? 1) + 1) % 7 : 1;
@@ -317,7 +344,7 @@ export class MarkdownEditor {
   }
 
   private onKeyDown(event: KeyboardEvent): void {
-    if (event.isComposing || this.composition || event.keyCode === 229) return;
+    if ((event.target as Element).closest('.md-fence-lang') || event.isComposing || this.composition || event.keyCode === 229) return;
     const mod = event.metaKey || event.ctrlKey; const key = event.key.toLowerCase();
     if (key === 'arrowdown' && !mod && !event.altKey && !event.shiftKey && this.leaveCodeBlockDown()) {
       event.preventDefault(); event.stopPropagation(); return;
