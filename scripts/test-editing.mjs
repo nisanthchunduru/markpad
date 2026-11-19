@@ -134,7 +134,7 @@ try {
       return { gap: second.getBoundingClientRect().top - first.getBoundingClientRect().bottom, caretInSecond: second.contains(caretBlock), lineHeight: parseFloat(getComputedStyle(root).lineHeight) };
     });
     assert.equal(geometry.caretInSecond, true);
-    assert.ok(geometry.gap < geometry.lineHeight, 'Paragraph margin adds modest spacing, not an empty separator row');
+    assert.ok(geometry.gap > 0 && geometry.gap < geometry.lineHeight, 'Paragraph margin adds modest spacing, not an empty separator row');
     await page.keyboard.type('Paragraph two');
     await save('Paragraph one\n\nParagraph two');
     await reloadEditor();
@@ -219,7 +219,6 @@ try {
     await expect(frame.locator('pre code')).toHaveText('const typed = true;');
     await save('```js\nconst typed = true;\n```');
   });
-
 
   await verifyCodeNavigation({ frame, page, mod, fixture, save, step });
 
@@ -349,6 +348,36 @@ try {
     await page.keyboard.press(mod + '+ArrowRight');
     await page.keyboard.type('!');
     await save('---\nname: test\n---\n\n| Key | Value |\n| --- | --- |\n| first | original! |\n');
+  });
+
+  await step('all themes give paragraphs modest spacing and headings larger margins without extra rows', async () => {
+    const source = 'Line one\nLine two\n\nNext paragraph\n\n' + Array.from({ length: 6 }, (_, index) => '#'.repeat(index + 1) + ' Heading ' + (index + 1) + '\n\nFollowing paragraph ' + (index + 1)).join('\n\n');
+    await fixture(source, 'Following paragraph 6');
+    for (const theme of ['github', 'gothic', 'newsprint', 'night', 'pixyll', 'pixyll-night', 'whitey']) {
+      await frame.locator('#themePicker').selectOption(theme);
+      await expect(frame.locator('html')).toHaveAttribute('data-theme', theme);
+      const metrics = await frame.locator('#write').evaluate(async root => {
+        await document.fonts.ready;
+        const paragraphs = root.querySelectorAll('.md-paragraph');
+        const paragraphGap = paragraphs[1].getBoundingClientRect().top - paragraphs[0].getBoundingClientRect().bottom;
+        const lineHeight = parseFloat(getComputedStyle(paragraphs[0]).lineHeight);
+        const headings = Array.from(root.querySelectorAll('.md-heading'), heading => ({
+          before: heading.getBoundingClientRect().top - heading.previousElementSibling.getBoundingClientRect().bottom,
+          after: heading.nextElementSibling.getBoundingClientRect().top - heading.getBoundingClientRect().bottom,
+          topPadding: parseFloat(getComputedStyle(heading).paddingTop)
+        }));
+        return { paragraphGap, lineHeight, headings, count: root.children.length };
+      });
+      assert.equal(metrics.count, 14, theme + ': no source-only separator rows');
+      assert.ok(metrics.paragraphGap > 0 && metrics.paragraphGap < metrics.lineHeight, theme + ': paragraph spacing');
+      for (const heading of metrics.headings) {
+        assert.ok(heading.before > metrics.paragraphGap, theme + ': extra space above headings');
+        assert.ok(heading.after > 0 && heading.after < heading.before, theme + ': balanced space below headings');
+        assert.equal(heading.topPadding, 0, theme + ': margins do not stack with old heading padding');
+      }
+      await page.screenshot({ path: join(workspace, theme + '-spacing.png') });
+    }
+    assert.equal(await readFile(file, 'utf8'), source, 'Theme spacing does not change Markdown');
   });
 
   await step('zoom controls work without editing Markdown', async () => {

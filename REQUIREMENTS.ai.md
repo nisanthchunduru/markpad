@@ -9,6 +9,9 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-001: Tyler shall parse a Markdown document into a sequence of typed block nodes (paragraph, heading, blockquote, bullet, ordered, task, fence, rule, table, blank, frontmatter).
 - REQ-002: Tyler shall serialize block nodes and their source separators back to Markdown that, when re-parsed, produces an equivalent visible block sequence.
 - REQ-005: Tyler shall store the blank-line separator between paragraphs as source metadata rather than as an additional editable block.
+- REQ-006: When adjacent paragraphs are rendered, Tyler shall add a positive visual margin smaller than one body-text line height, without inserting an editable separator row or changing the saved Markdown.
+- REQ-007: While a theme is active, Tyler shall give headings more visual space above than below and more space above than the gap between ordinary paragraphs.
+- REQ-008: Tyler shall apply heading margins without stacking them with obsolete vertical padding from the earlier line-based layout.
 - REQ-003: When the user edits a block in the contenteditable surface, Tyler shall read the updated content from the DOM and update the corresponding block node's raw Markdown.
 - REQ-004: When a block's raw Markdown changes to match a different block type (e.g. typing `## ` at the start of a paragraph), Tyler shall re-classify the block and re-render it as the new type.
 

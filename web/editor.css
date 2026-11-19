@@ -36,6 +36,9 @@ header:hover .header-actions, .header-actions:focus-within { opacity: 1; }
 .header-actions button:hover { background: var(--panel); }
 
 #write {
+  --paragraph-gap: .6em;
+  --heading-gap-before: 1.4rem;
+  --heading-gap-after: .6rem;
   flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
   padding: 30px 30px 100px;
   font-family: var(--writing-font);
@@ -64,7 +67,12 @@ h4.md-heading { font-size: 1.25em; }
 h5.md-heading, h6.md-heading { font-size: 1em; }
 h6.md-heading { color: var(--muted); }
 
-.md-paragraph { margin: .8em 0; white-space: pre-wrap; }
+.md-paragraph { white-space: pre-wrap; }
+#write > :is(.md-paragraph, .md-blank) { margin-block: var(--paragraph-gap); }
+#write > .md-heading { margin-block: var(--heading-gap-before) var(--heading-gap-after); padding-block: 0; }
+#write > :is(h1, h2).md-heading { padding-bottom: .15em; }
+#write > :first-child { margin-top: 0; }
+#write > :last-child { margin-bottom: 0; }
 #write .md-blank, #write .md-paragraph:empty { min-height: 1.4em; }
 .md-blank { margin: 0; min-height: .5em; }
 

@@ -27,7 +27,7 @@ html[data-theme='gothic'] {
   --writing-width: 914px;
   --quote-edge: #aaa;
 }
-html[data-theme='gothic'] #write { text-align: justify; font-weight: 300; }
+html[data-theme='gothic'] #write { text-align: justify; font-weight: 300; --paragraph-gap: .65em; --heading-gap-before: 1.75rem; --heading-gap-after: .75rem; }
 html[data-theme='gothic'] .md-heading { font-family: 'TeX Gyre Adventor', 'Didact Gothic', 'Avenir Next', sans-serif; font-weight: 400; }
 html[data-theme='gothic'] h1.md-heading,
 html[data-theme='gothic'] h2.md-heading { text-align: center; text-transform: uppercase; border-bottom: 0; line-height: 1.5; padding-top: 1.5em; padding-bottom: .7em; }
@@ -51,6 +51,7 @@ html[data-theme='newsprint'] {
   --writing-width: 640px;
   --quote-edge: #665956;
 }
+html[data-theme='newsprint'] #write { --paragraph-gap: .7em; --heading-gap-before: 1.5rem; --heading-gap-after: .65rem; }
 html[data-theme='newsprint'] h1.md-heading { font-size: 1.875em; line-height: 1.6; padding-bottom: .8em; padding-top: 1.25em; }
 html[data-theme='newsprint'] h2.md-heading,
 html[data-theme='newsprint'] h3.md-heading { font-size: 1.3125em; line-height: 1.15; padding-top: 1.4em; }
@@ -74,6 +75,7 @@ html[data-theme='night'] {
   --writing-width: 914px;
   --quote-edge: #858d95;
 }
+html[data-theme='night'] #write { --paragraph-gap: .65em; --heading-gap-before: 1.5rem; --heading-gap-after: .65rem; }
 html[data-theme='night'] .md-heading { font-family: 'Lucida Grande', 'Corbel', sans-serif; font-weight: 400; }
 html[data-theme='night'] h1.md-heading { font-size: 2.5em; letter-spacing: -.04em; border-bottom: 0; }
 html[data-theme='night'] h2.md-heading { font-size: 1.63em; font-weight: 700; letter-spacing: -.025em; border-bottom: 0; }
@@ -101,7 +103,7 @@ html[data-theme='pixyll'], html[data-theme='pixyll-night'] {
   --sidebar-hover-ink: #333;
   --sidebar-border: #e6e6e6;
 }
-:is([data-theme='pixyll'], [data-theme='pixyll-night']) #write { font-weight: 300; padding-top: 32px; }
+:is([data-theme='pixyll'], [data-theme='pixyll-night']) #write { font-weight: 300; padding-top: 32px; --paragraph-gap: .7em; --heading-gap-before: 1.75rem; --heading-gap-after: .75rem; }
 :is([data-theme='pixyll'], [data-theme='pixyll-night']) .md-heading { font-family: Lato, 'Helvetica Neue', Helvetica, sans-serif; font-weight: 700; line-height: 1.2; padding: 1em 0 .5em; }
 :is([data-theme='pixyll'], [data-theme='pixyll-night']) h1.md-heading { font-size: 3.25rem; border-bottom: 0; }
 :is([data-theme='pixyll'], [data-theme='pixyll-night']) h2.md-heading { font-size: 2.298rem; border-bottom: 0; }
@@ -159,7 +161,7 @@ html[data-theme='whitey'] {
   --sidebar-hover-ink: #333;
   --sidebar-border: #ddd;
 }
-html[data-theme='whitey'] #write { text-align: justify; padding-top: 40px; }
+html[data-theme='whitey'] #write { text-align: justify; padding-top: 40px; --paragraph-gap: .65em; --heading-gap-before: 1.75rem; --heading-gap-after: .75rem; }
 html[data-theme='whitey'] .md-heading { font-weight: 400; }
 html[data-theme='whitey'] h1.md-heading,
 html[data-theme='whitey'] h2.md-heading,
