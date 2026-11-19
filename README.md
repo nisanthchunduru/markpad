@@ -1,10 +1,8 @@
 # markpad
 
-> ⚠️ Markpad is currently in active development. Expect bugs.
-
 Typora-inspired markdown editor for VSCode
 
-<img width="6240" height="3400" alt="image" src="https://github.com/user-attachments/assets/df440bca-3d58-465e-b25f-f984dffc6cfe" />
+<img width="3680" height="2244" alt="image" src="https://github.com/user-attachments/assets/4f9c26be-ca3d-474e-af8d-34ef020e2545" />
 
 ## Install
 
