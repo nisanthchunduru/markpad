@@ -14,3 +14,8 @@ npm run build
 npx @vscode/vsce package --no-dependencies --allow-missing-repository -o build/
 code --install-extension build/markpad-*.vsix
 ```
+
+## Features
+
+- Typora-inspired UI/UX in VSCode
+- A "Open in Typora" button (that appears if you've Typora installed) to open a Markdown doc in Typora if you'd like
