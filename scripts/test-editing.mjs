@@ -162,6 +162,32 @@ try {
     await save('Repeated Enter\n\n\n\nLast paragraph');
   });
 
+  await step('typing leading hashes and a space sets the heading level without changing the title', async () => {
+    await fixture('# **Release** notes\n', 'Release notes');
+    await frame.locator('h1 strong').click();
+    await page.keyboard.press(mod + '+ArrowLeft');
+    await page.keyboard.type('###');
+    await expect(frame.locator('h1')).toHaveText('###Release notes');
+    await page.keyboard.press('Space');
+    await expect(frame.locator('h3 strong')).toHaveText('Release');
+    assert.equal((await bookmark()).offset, 0);
+    await save('### **Release** notes\n');
+    await page.keyboard.press(mod + '+z');
+    await expect(frame.locator('h1')).toHaveText('###Release notes');
+    await page.keyboard.press(mod + '+Shift+z');
+    await page.keyboard.type('# ');
+    await expect(frame.locator('h1')).toHaveText('Release notes');
+    await save('# **Release** notes\n');
+    await page.keyboard.press(mod + '+ArrowRight');
+    await page.keyboard.type(' ## suffix');
+    await save('# **Release** notes ## suffix\n');
+    await page.keyboard.press(mod + '+ArrowLeft');
+    await page.keyboard.type('####### ');
+    await expect(frame.locator('h1')).toContainText('#######');
+    await page.keyboard.press(mod + '+s');
+    await expect(page.locator('.tab.dirty')).toHaveCount(0);
+  });
+
   await step('Backspace at the start of a heading removes its level without joining paragraphs', async () => {
     const original = 'Before title\n###### **Formatted** title\nAfter title';
     const demoted = 'Before title\n\n**Formatted** title\n\nAfter title';

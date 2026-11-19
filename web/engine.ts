@@ -142,12 +142,33 @@ export class MarkdownEditor {
     this.rememberDom();
   }
 
+  private applyTypedHeadingLevel(range: Range): boolean {
+    const block = this.selectedBlock();
+    if (!range.collapsed || block?.type !== 'heading') return false;
+    const heading = this.root.querySelector<HTMLElement>(`[data-cid="${block.id}"]`)!;
+    const prefix = range.cloneRange();
+    prefix.setStart(heading, 0);
+    const fragment = prefix.cloneContents();
+    const hashes = plainText(fragment);
+    if (!/^#{1,6}$/.test(hashes) || fragment.querySelector('img')) return false;
+
+    const before = this.snapshot();
+    prefix.deleteContents();
+    block.level = hashes.length;
+    block.raw = readBlock(block, heading);
+    this.render(); restoreSelection(this.root, caret(block.id)); this.commit(before);
+    return true;
+  }
+
   private onBeforeInput(event: InputEvent): void {
     if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
       event.preventDefault(); event.inputType === 'historyUndo' ? this.undo() : this.redo(); return;
     }
     if (this.composition || event.isComposing) return;
     const range = this.activeRange();
+    if (event.inputType === 'insertText' && event.data === ' ' && range && this.applyTypedHeadingLevel(range)) {
+      event.preventDefault(); return;
+    }
     if (event.inputType === 'insertText' && range && range.startContainer === this.root && range.endContainer === this.root && range.startOffset === 0 && range.endOffset === this.root.childNodes.length) {
       event.preventDefault();
       const before = this.snapshot();
