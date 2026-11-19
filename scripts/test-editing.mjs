@@ -162,6 +162,24 @@ try {
     await save('Repeated Enter\n\n\n\nLast paragraph');
   });
 
+  await step('Backspace at the start of a heading removes its level without joining paragraphs', async () => {
+    const original = 'Before title\n###### **Formatted** title\nAfter title';
+    const demoted = 'Before title\n\n**Formatted** title\n\nAfter title';
+    await fixture(original, 'Before title');
+    await frame.locator('h6 strong').click();
+    await page.keyboard.press(mod + '+ArrowLeft');
+    await page.keyboard.press('Backspace');
+    await expect(frame.locator('#write > p')).toHaveCount(3);
+    await expect(frame.locator('p strong')).toHaveText('Formatted');
+    assert.equal((await bookmark()).offset, 0);
+    await save(demoted);
+    await page.keyboard.press(mod + '+z'); await save(original);
+    await expect(frame.locator('h6 strong')).toHaveText('Formatted');
+    await page.keyboard.press(mod + '+Shift+z'); await save(demoted);
+    await reloadEditor();
+    await expect(frame.locator('#write > p')).toHaveCount(3);
+  });
+
   await step('splitting a bold heading in the middle preserves formatting on both sides', async () => {
     await fixture('# **Hello** world\n\nTail\n', 'Tail');
     await frame.locator('h1 strong').click();

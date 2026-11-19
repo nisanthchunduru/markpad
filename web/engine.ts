@@ -313,6 +313,30 @@ export class MarkdownEditor {
     this.render(); restoreSelection(this.root, bookmark); this.commit(before);
   }
 
+  private demoteHeadingAtStart(): boolean {
+    const range = this.activeRange();
+    if (!range?.collapsed) return false;
+    const block = this.selectedBlock();
+    if (block?.type !== 'heading') return false;
+    const heading = this.root.querySelector<HTMLElement>(`[data-cid="${block.id}"]`)!;
+    const preceding = range.cloneRange();
+    preceding.selectNodeContents(heading);
+    preceding.setEnd(range.startContainer, range.startOffset);
+    const prefix = preceding.cloneContents();
+    if (plainText(prefix) || prefix.querySelector('img')) return false;
+
+    const before = this.snapshot();
+    const index = this.blocks.indexOf(block);
+    const raw = block.raw.replace(/^#{1,6}\s/, '');
+    const paragraph: BlockNode = { id: block.id, type: 'paragraph', raw, separatorBefore: block.separatorBefore };
+    const next = this.blocks[index + 1];
+    if (this.blocks[index - 1]?.type === 'paragraph' && (paragraph.separatorBefore ?? '\n') === '\n') paragraph.separatorBefore = '\n\n';
+    if (next?.type === 'paragraph' && (next.separatorBefore ?? '\n') === '\n') next.separatorBefore = '\n\n';
+    this.blocks[index] = paragraph;
+    this.render(); restoreSelection(this.root, caret(block.id)); this.commit(before);
+    return true;
+  }
+
   private leaveCodeBlockDown(): boolean {
     const block = this.selectedBlock();
     const range = this.activeRange();
@@ -346,6 +370,9 @@ export class MarkdownEditor {
   private onKeyDown(event: KeyboardEvent): void {
     if ((event.target as Element).closest('.md-fence-lang') || event.isComposing || this.composition || event.keyCode === 229) return;
     const mod = event.metaKey || event.ctrlKey; const key = event.key.toLowerCase();
+    if (key === 'backspace' && !mod && !event.altKey && !event.shiftKey && this.demoteHeadingAtStart()) {
+      event.preventDefault(); event.stopPropagation(); return;
+    }
     if (key === 'arrowdown' && !mod && !event.altKey && !event.shiftKey && this.leaveCodeBlockDown()) {
       event.preventDefault(); event.stopPropagation(); return;
     }
