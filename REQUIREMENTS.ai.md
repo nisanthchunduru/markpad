@@ -22,6 +22,7 @@ Requirements in [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requir
 - REQ-012: While a heading is rendered, Tyler shall keep structural Markdown prefixes out of its editable text so moving the caret cannot edit or split a metadata span.
 - REQ-013: When a heading block is not focused, Tyler shall hide the Markdown prefix and display only the rendered heading text.
 - REQ-014: Tyler shall render YAML frontmatter as a two-column key-value table.
+- REQ-009: When Tyler renders consecutive fenced code blocks, the active theme shall separate them visually using its Typora-inspired vertical margins without inserting editable rows or changing the Markdown.
 - REQ-015: Tyler shall render fenced code blocks as `<pre><code>` with a language label, supporting both top-level and indented fences.
 - REQ-016: Tyler shall render Markdown tables as HTML `<table>` elements with column alignment.
 - REQ-017: Tyler shall render task list items with interactive checkboxes.

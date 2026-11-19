@@ -2,7 +2,7 @@
   "name": "markpad",
   "displayName": "Tyler: Typora-inspired Markdown Editor",
   "description": "A Typora-inspired, live-preview Markdown editor inside VS Code.",
-  "version": "0.1.45",
+  "version": "0.1.46",
   "publisher": "nisanthchunduru",
   "license": "MIT",
   "engines": {

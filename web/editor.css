@@ -71,6 +71,7 @@ h6.md-heading { color: var(--muted); }
 #write > :is(.md-paragraph, .md-blank) { margin-block: var(--paragraph-gap); }
 #write > .md-heading { margin-block: var(--heading-gap-before) var(--heading-gap-after); padding-block: 0; }
 #write > :is(h1, h2).md-heading { padding-bottom: .15em; }
+#write > .md-fence { margin-block: var(--fence-before, 0px) var(--fence-after, 1em); padding: var(--fence-padding, .5em 1em); }
 #write > :first-child { margin-top: 0; }
 #write > :last-child { margin-bottom: 0; }
 #write .md-blank, #write .md-paragraph:empty { min-height: 1.4em; }
@@ -86,7 +87,7 @@ h6.md-heading { color: var(--muted); }
 .md-list-content { flex: 1; min-width: 0; white-space: pre-wrap; }
 .md-task-checkbox { flex: none; margin: 0 .5em 0 0; accent-color: var(--accent); cursor: pointer; }
 
-.md-fence { background: var(--panel); border-radius: 4px; padding: .8em 1em; margin: .8em 0; overflow-x: auto; position: relative; }
+.md-fence { background: var(--panel); border-radius: 4px; overflow-x: auto; position: relative; }
 .md-fence code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; font-size: .85em; line-height: 1.6; white-space: pre; display: block; color: var(--ink); background: none; padding: 0; }
 .md-fence-lang { position: absolute; top: .4em; right: .8em; font-size: .7em; color: var(--muted); font-family: 'SFMono-Regular', Consolas, monospace; }
 

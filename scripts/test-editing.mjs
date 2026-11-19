@@ -352,7 +352,8 @@ try {
 
   await step('all themes give paragraphs modest spacing and headings larger margins without extra rows', async () => {
     const source = 'Line one\nLine two\n\nNext paragraph\n\n' + Array.from({ length: 6 }, (_, index) => '#'.repeat(index + 1) + ' Heading ' + (index + 1) + '\n\nFollowing paragraph ' + (index + 1)).join('\n\n');
-    await fixture(source, 'Following paragraph 6');
+    const fencedSource = source + '\n\n```js\nfirst()\n```\n```js\nsecond()\n```\n\nAfter fences';
+    await fixture(fencedSource, 'After fences');
     for (const theme of ['github', 'gothic', 'newsprint', 'night', 'pixyll', 'pixyll-night', 'whitey']) {
       await frame.locator('#themePicker').selectOption(theme);
       await expect(frame.locator('html')).toHaveAttribute('data-theme', theme);
@@ -366,9 +367,15 @@ try {
           after: heading.nextElementSibling.getBoundingClientRect().top - heading.getBoundingClientRect().bottom,
           topPadding: parseFloat(getComputedStyle(heading).paddingTop)
         }));
-        return { paragraphGap, lineHeight, headings, count: root.children.length };
+        const [first, second] = root.querySelectorAll('.md-fence');
+        const fenceStyle = getComputedStyle(first);
+        const expectedFenceGap = Math.max(parseFloat(fenceStyle.marginBottom), parseFloat(getComputedStyle(second).marginTop));
+        const fenceGap = second.getBoundingClientRect().top - first.getBoundingClientRect().bottom;
+        return { paragraphGap, lineHeight, headings, count: root.children.length, fenceGap, expectedFenceGap, fenceInset: parseFloat(fenceStyle.paddingLeft) };
       });
-      assert.equal(metrics.count, 14, theme + ': no source-only separator rows');
+      assert.equal(metrics.count, 17, theme + ': no source-only separator rows');
+      assert.ok(metrics.fenceGap > 0 && Math.abs(metrics.fenceGap - metrics.expectedFenceGap) < 1, theme + ': adjacent fences have their themed visual gap');
+      assert.ok(metrics.fenceInset > 0, theme + ': code retains its inner padding');
       assert.ok(metrics.paragraphGap > 0 && metrics.paragraphGap < metrics.lineHeight, theme + ': paragraph spacing');
       for (const heading of metrics.headings) {
         assert.ok(heading.before > metrics.paragraphGap, theme + ': extra space above headings');
@@ -377,7 +384,7 @@ try {
       }
       await page.screenshot({ path: join(workspace, theme + '-spacing.png') });
     }
-    assert.equal(await readFile(file, 'utf8'), source, 'Theme spacing does not change Markdown');
+    assert.equal(await readFile(file, 'utf8'), fencedSource, 'Theme spacing does not change Markdown');
   });
 
   await step('zoom controls work without editing Markdown', async () => {

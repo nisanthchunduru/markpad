@@ -1,4 +1,7 @@
 html[data-theme='github'] {
+  --fence-before: 15px;
+  --fence-after: 15px;
+  --fence-padding: 8px 4px 6px;
   --paper: #fff;
   --ink: #333;
   --muted: #777;
@@ -14,6 +17,8 @@ html[data-theme='github'] {
 }
 
 html[data-theme='gothic'] {
+  --fence-after: 20px;
+  --fence-padding: .4em 1em .3em;
   --paper: #fcfcfc;
   --ink: #111;
   --muted: #777;
@@ -38,6 +43,8 @@ html[data-theme='gothic'] h4.md-heading { font-size: 1.25rem; }
 html[data-theme='gothic'] h5.md-heading { font-size: 1.125rem; }
 
 html[data-theme='newsprint'] {
+  --fence-after: 3em;
+  --fence-padding: 0 1ch;
   --paper: #f3f2ee;
   --ink: #1f0909;
   --muted: #665956;
@@ -60,6 +67,8 @@ html[data-theme='newsprint'] h3.md-heading { font-weight: 400; }
 html[data-theme='newsprint'] .quote { font-style: italic; border-left-width: 5px; }
 
 html[data-theme='night'] {
+  --fence-after: 20px;
+  --fence-padding: 10px 10px 10px 30px;
   color-scheme: dark;
   --paper: #363b40;
   --ink: #b8bfc6;
@@ -84,6 +93,8 @@ html[data-theme='night'] .md-frontmatter { border-color: var(--border); }
 html[data-theme='night'] .md-frontmatter td { border-color: var(--border); }
 
 html[data-theme='pixyll'], html[data-theme='pixyll-night'] {
+  --fence-after: .88rem;
+  --fence-padding: .5rem 1.125rem;
   --paper: #fff;
   --ink: #333;
   --muted: #7a7a7a;
@@ -142,6 +153,8 @@ html[data-theme='pixyll-night'] {
 }
 
 html[data-theme='whitey'] {
+  --fence-after: 1.5em;
+  --fence-padding: 8px 1em 6px;
   --paper: #fefefe;
   --ink: #333;
   --muted: #777;
